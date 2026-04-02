@@ -157,7 +157,7 @@
     const baseData = ["70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89"];
     const doubleItems = ["71", "75", "79", "81", "84", "86", "89"];
     let quizData = [], currentIdx = 0, correctCount = 0, totalScore = 0, timeLeft = 10, timerInterval, is5sPlayed = false;
-    let lives = 3; // Khởi tạo số mạng
+    let lives = 3; 
 
     const rList = document.getElementById('review-list');
     baseData.forEach(num => { rList.innerHTML += `<div class="rev-item"><img src="${num}.png"></div>`; });
@@ -173,6 +173,9 @@
         quizData = [...baseData, ...doubleItems].sort(() => Math.random() - 0.5);
         document.getElementById('total-q-display').innerText = quizData.length;
         lives = 3;
+        currentIdx = 0;
+        correctCount = 0;
+        totalScore = 0;
         updateHeartsUI();
         loadQuestion();
     }
@@ -220,29 +223,33 @@
             if(card) card.classList.add('correct-tap');
             showFloatingText("+5", "var(--green)");
             dungSound.currentTime = 0; dungSound.play();
+            
+            currentIdx++;
+            setTimeout(() => {
+                document.getElementById('options-grid').style.pointerEvents = 'auto';
+                loadQuestion();
+            }, 500);
         } else {
-            lives--; // Trừ mạng khi sai hoặc hết giờ
+            lives--; 
             updateHeartsUI();
             if(card) card.classList.add('wrong-tap');
             showFloatingText("Sai rồi!", "var(--red)");
             saiSound.currentTime = 0; saiSound.play();
             
-            // Hiệu ứng rung khi sai
             document.getElementById('mobile-container').classList.add('shake');
             setTimeout(() => document.getElementById('mobile-container').classList.remove('shake'), 300);
-        }
 
-        document.getElementById('live-score').innerText = totalScore;
-        currentIdx++;
-
-        setTimeout(() => {
             if (lives <= 0) {
-                checkFinalResult(); // Thua ngay lập tức
+                setTimeout(() => checkFinalResult(), 600);
             } else {
-                document.getElementById('options-grid').style.pointerEvents = 'auto';
-                loadQuestion();
+                currentIdx++; // Vẫn chuyển sang câu tiếp theo dù sai
+                setTimeout(() => {
+                    document.getElementById('options-grid').style.pointerEvents = 'auto';
+                    loadQuestion();
+                }, 800);
             }
-        }, 600);
+        }
+        document.getElementById('live-score').innerText = totalScore;
     }
 
     function startTimer() {
@@ -262,12 +269,14 @@
         clearInterval(timerInterval);
         bgMusic.pause();
 
-        if (lives > 0 && correctCount === quizData.length) {
+        // Thắng nếu vẫn còn tim sau khi kết thúc các câu hỏi
+        if (lives > 0 && currentIdx >= quizData.length) {
             winSound.play();
             document.getElementById('win-modal').classList.add('active');
             animateNumber(0, 2000, 3000, 'bonus-points');
         } else {
-            document.getElementById('lose-stats').innerText = `Kết quả: ${correctCount}/${quizData.length}`;
+            // Thua nếu hết tim (lives = 0)
+            document.getElementById('lose-stats').innerText = `Đúng: ${correctCount}/${quizData.length}`;
             document.getElementById('lose-modal').classList.add('active');
         }
     }
@@ -295,7 +304,15 @@
         setTimeout(() => float.remove(), 800);
     }
 
-    window.addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 't') { correctCount = 27; checkFinalResult(); } });
+    // Phím tắt Test nhanh (T)
+    window.addEventListener('keydown', (e) => { 
+        if (e.key.toLowerCase() === 't') { 
+            correctCount = quizData.length; 
+            currentIdx = quizData.length; 
+            lives = 3;
+            checkFinalResult(); 
+        } 
+    });
 </script>
 </body>
 </html>
