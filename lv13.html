@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Level 13: Ghép đôi 5x - X2</title>
+    <style>
+        :root {
+            --card-width: 65px;
+            --card-height: 90px;
+            --theme-blue: #00E5FF;
+            --gold: #FFD700;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #1a1a1a; margin: 0; display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; overflow: hidden; user-select: none; 
+        }
+
+        #mobile-wrapper {
+            width: 100vw; height: 100vh;
+            max-width: 430px; max-height: 932px;
+            background: #000 url('b1.jpg') no-repeat center center;
+            background-size: cover;
+            position: relative; display: flex; flex-direction: column;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8); border: 1px solid #333;
+        }
+
+        #header { padding: 15px; background: rgba(0,0,0,0.8); border-bottom: 2px solid var(--theme-blue); display: flex; justify-content: space-between; align-items: center; }
+        .stats { font-weight: bold; font-size: 16px; color: white; }
+
+        #timer-container { width: 100%; height: 6px; background: #333; }
+        #timer-fill { width: 100%; height: 100%; background: var(--theme-blue); transition: width 0.1s linear; }
+
+        #game-board { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px; padding: 10px; }
+        
+        .grid-layout { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 10px; 
+            width: 100%; 
+            justify-items: center;
+        }
+
+        .card { 
+            width: var(--card-width); height: var(--card-height); 
+            background: white; border-radius: 10px; border: 3px solid transparent;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .card img { width: 85%; height: 60%; object-fit: contain; }
+        .card-num { font-size: 26px; font-weight: bold; color: #1a1a1a; }
+        .card-label { font-size: 9px; color: #666; margin-top: 2px; font-weight: bold; text-align: center; line-height: 1; }
+
+        .selected { border-color: #FF5722; transform: scale(1.05); box-shadow: 0 0 15px #FF5722; z-index: 5; }
+        .matched { opacity: 0; visibility: hidden; pointer-events: none; transform: scale(0.5); }
+
+        /* MODALS */
+        .modal { 
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; 
+            justify-content: center; z-index: 1000; padding: 20px; text-align: center; box-sizing: border-box;
+        }
+        .modal.active { display: flex; }
+        .action-btn { padding: 15px 40px; font-size: 18px; background: var(--theme-blue); color: black; border: none; border-radius: 40px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+
+        #review-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .review-item { background: white; padding: 5px; border-radius: 8px; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; }
+        .review-item img { width: 90%; height: 90%; object-fit: contain; }
+
+        .rank-bar { width: 80%; height: 12px; background: #333; border-radius: 10px; margin: 15px 0; border: 1px solid var(--gold); overflow: hidden; }
+        .rank-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, var(--gold)); transition: width 1s; }
+        .shake { animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+    </style>
+</head>
+<body>
+
+    <div id="mobile-wrapper">
+        <div id="header">
+            <div class="stats">LEVEL 13: X2</div>
+            <div class="stats" id="lives-display">❤️❤️❤️</div>
+        </div>
+        <div id="timer-container"><div id="timer-fill"></div></div>
+
+        <div id="game-board">
+            <!-- Hàng Số: 2 thẻ 50, 2 thẻ 58, 2 thẻ 59 -->
+            <div class="grid-layout" id="num-grid"></div>
+            <div style="height: 15px;"></div>
+            <!-- Hàng Hình: 2 thẻ 50, 2 thẻ 58, 2 thẻ 59 -->
+            <div class="grid-layout" id="img-grid"></div>
+        </div>
+
+        <div id="start-modal" class="modal active">
+            <h2 style="color: var(--theme-blue);">ÔN TẬP 50 - 58 - 59</h2>
+            <div id="review-grid"></div>
+            <p>Mỗi cặp sẽ xuất hiện 2 lần.<br>Hãy bắn hạ tất cả các thẻ!</p>
+            <button class="action-btn" onclick="startGame()">BẮT ĐẦU</button>
+        </div>
+
+        <div id="win-modal" class="modal">
+            <h2 style="color: var(--gold);">XUẤT SẮC! 🏆</h2>
+            <div style="font-size: 24px; color: #4CAF50; font-weight: bold;">+ 400 ĐIỂM</div>
+            <div class="rank-bar"><div class="rank-fill" id="progress-fill"></div></div>
+            <p style="color: var(--gold);">Tiến trình: 6000 / 6000</p>
+            <button class="action-btn" onclick="window.location.href='lv14.html'">LEVEL 14 ➔</button>
+        </div>
+
+        <div id="lose-modal" class="modal">
+            <h2 style="color: #ff5252;">THẤT BẠI</h2>
+            <button class="action-btn" onclick="location.reload()">THỬ LẠI</button>
+        </div>
+    </div>
+
+    <script>
+        const bgMusic = new Audio('nhac-nen-2.mp3'); bgMusic.loop = true; bgMusic.volume = 0.15;
+        const correctSound = new Audio('bum.mp3');
+        const wrongSound = new Audio('sai.mp3');
+        const victorySound = new Audio('chien-thang.mp3');
+
+        // Gốc
+        const baseData = [
+            { id: 50, text: "Xe đạp" },
+            { id: 58, text: "Chú hề" },
+            { id: 59, text: "Con mèo" }
+        ];
+
+        // Nhân đôi dữ liệu để mỗi cặp xuất hiện 2 lần (6 thẻ số, 6 thẻ hình)
+        const gameData = [...baseData, ...baseData];
+
+        let lives = 3;
+        let matchedCount = 0;
+        let selectedId = null;
+        let selectedEl = null;
+        let timer;
+        let timeLeft = 12; // Tăng thêm 2 giây vì có tới 12 thẻ
+        let isAnimating = false;
+
+        // Load Review: a[số].png
+        const rGrid = document.getElementById('review-grid');
+        baseData.forEach(d => {
+            rGrid.innerHTML += `<div class="review-item"><img src="a${d.id}.png"></div>`;
+        });
+
+        // Test Nhanh
+        window.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 't') handleWin();
+            if (e.key.toLowerCase() === 'l') handleLose();
+        });
+
+        function startGame() {
+            document.getElementById('start-modal').classList.remove('active');
+            bgMusic.play().catch(() => {});
+            initBoard();
+            startTimer();
+        }
+
+        function initBoard() {
+            const numGrid = document.getElementById('num-grid');
+            const imgGrid = document.getElementById('img-grid');
+            
+            // Trộn ngẫu nhiên
+            const nums = [...gameData].sort(() => Math.random() - 0.5);
+            const imgs = [...gameData].sort(() => Math.random() - 0.5);
+
+            nums.forEach((d, index) => {
+                const card = document.createElement('div');
+                card.className = 'card card-num';
+                card.innerText = d.id;
+                card.onclick = () => selectNum(d.id, card);
+                numGrid.appendChild(card);
+            });
+
+            imgs.forEach((d, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `<img src="${d.id}.png"><div class="card-label">${d.text}</div>`;
+                card.onclick = () => selectImg(d.id, card);
+                imgGrid.appendChild(card);
+            });
+        }
+
+        function startTimer() {
+            timeLeft = 12;
+            clearInterval(timer);
+            timer = setInterval(() => {
+                timeLeft -= 0.1;
+                document.getElementById('timer-fill').style.width = (timeLeft / 1.2 * 10) + "%";
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    takeDamage();
+                }
+            }, 100);
+        }
+
+        function selectNum(id, el) {
+            if (isAnimating || el.classList.contains('matched')) return;
+            if (selectedEl) selectedEl.classList.remove('selected');
+            selectedId = id;
+            selectedEl = el;
+            el.classList.add('selected');
+        }
+
+        function selectImg(id, el) {
+            if (isAnimating || selectedId === null || el.classList.contains('matched')) return;
+            isAnimating = true;
+
+            if (selectedId === id) {
+                correctSound.currentTime = 0; correctSound.play();
+                el.classList.add('matched');
+                selectedEl.classList.add('matched');
+                matchedCount++;
+                resetTurn();
+                if (matchedCount === gameData.length) {
+                    handleWin();
+                } else {
+                    startTimer();
+                    isAnimating = false;
+                }
+            } else {
+                takeDamage();
+                el.classList.add('shake');
+                setTimeout(() => {
+                    el.classList.remove('shake');
+                    if (selectedEl) selectedEl.classList.remove('selected');
+                    resetTurn();
+                    isAnimating = false;
+                }, 400);
+            }
+        }
+
+        function resetTurn() { selectedId = null; selectedEl = null; }
+
+        function takeDamage() {
+            wrongSound.currentTime = 0; wrongSound.play();
+            lives--;
+            updateLivesUI();
+            document.getElementById('mobile-wrapper').classList.add('shake');
+            setTimeout(() => document.getElementById('mobile-wrapper').classList.remove('shake'), 300);
+            if (lives <= 0) handleLose();
+            else startTimer();
+        }
+
+        function updateLivesUI() {
+            let h = ''; for(let i=0; i<lives; i++) h += '❤️';
+            document.getElementById('lives-display').innerText = h || '💀';
+        }
+
+        function handleWin() {
+            clearInterval(timer);
+            bgMusic.pause();
+            victorySound.play();
+            document.getElementById('win-modal').classList.add('active');
+            setTimeout(() => document.getElementById('progress-fill').style.width = '100%', 500);
+        }
+
+        function handleLose() {
+            clearInterval(timer);
+            bgMusic.pause();
+            document.getElementById('lose-modal').classList.add('active');
+        }
+    </script>
+</body>
+</html>

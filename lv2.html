@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Level 2: Bảo Vệ Trí Nhớ 00-10</title>
+    <style>
+        :root {
+            --primary-cyan: #66FCF1;
+            --bg-dark: #0B0C10;
+            --gold: #FFD700;
+            --bronze: #cd7f32;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #1a1a1a; color: white; margin: 0; 
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; overflow: hidden; user-select: none; 
+        }
+
+        #mobile-container {
+            width: 100vw; height: 100vh;
+            max-width: 430px; max-height: 932px;
+            background: var(--bg-dark) url('b2.jpg') no-repeat center center;
+            background-size: cover;
+            position: relative; display: flex; flex-direction: column;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8); border: 1px solid #333;
+            overflow: hidden;
+        }
+
+        #top-bar { 
+            display: flex; flex-direction: column; padding: 10px; 
+            background: rgba(0, 0, 0, 0.85); border-bottom: 2px solid var(--primary-cyan); z-index: 10; 
+        }
+        
+        .info-row { display: flex; justify-content: space-between; width: 100%; font-size: 14px; }
+        #game-title { font-size: 18px; color: var(--primary-cyan); font-weight: bold; text-shadow: 0 0 5px var(--primary-cyan); }
+
+        #sky { position: relative; flex-grow: 1; width: 100%; overflow: hidden; }
+
+        @keyframes fall { from { top: -120px; } to { top: 100%; } }
+        
+        .meteor { 
+            position: absolute; display: flex; flex-direction: column; align-items: center; 
+            top: -120px; animation: fall 10s linear forwards; z-index: 1; 
+            border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; 
+            padding: 5px; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); 
+        }
+        .meteor img { width: 50px; height: 50px; object-fit: contain; }
+        .meteor-text { background: #FFEB3B; color: #000; padding: 1px 4px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-top: 3px; }
+
+        /* BỆ BẮN TỐI ƯU 2 HÀNG */
+        #base { 
+            background: rgba(31, 40, 51, 0.95); border-top: 3px solid var(--primary-cyan); 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px; padding: 8px; z-index: 5;
+        }
+        .turret-wrapper { display: flex; flex-direction: column; align-items: center; }
+        .cannon { font-size: 14px; margin-bottom: -2px; }
+        .btn-shoot { 
+            width: 100%; padding: 8px 0; font-size: 13px; font-weight: bold; 
+            border-radius: 6px; border: 1.5px solid var(--primary-cyan); 
+            background-color: #1f2833; color: var(--primary-cyan); cursor: pointer;
+        }
+        .btn-shoot:active { background: var(--primary-cyan); color: black; transform: scale(0.9); }
+
+        .laser { position: absolute; background-color: #ff0000; height: 3px; transform-origin: left center; z-index: 4; box-shadow: 0 0 8px #ff0000; animation: laserFade 0.3s forwards; pointer-events: none; }
+        @keyframes laserFade { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+        .points-popup {
+            position: absolute; color: #4CAF50; font-size: 24px; font-weight: bold;
+            text-shadow: 0 0 5px #fff; animation: pointsFly 1s forwards; z-index: 100;
+        }
+        @keyframes pointsFly { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-60px); opacity: 0; } }
+
+        .modal { 
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.98); flex-direction: column; align-items: center; 
+            justify-content: center; z-index: 1000; padding: 20px; text-align: center; box-sizing: border-box;
+        }
+        .modal.active { display: flex; }
+
+        @keyframes badgeGlow {
+            0% { filter: drop-shadow(0 0 10px var(--bronze)); }
+            50% { filter: drop-shadow(0 0 35px #ffcc80) drop-shadow(0 0 15px var(--bronze)); }
+            100% { filter: drop-shadow(0 0 10px var(--bronze)); }
+        }
+        #victory-badge {
+            width: 240px; height: auto; margin-bottom: 20px;
+            animation: badgeGlow 2s infinite ease-in-out;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: scale(0);
+        }
+        .modal.active #victory-badge { transform: scale(1); }
+
+        #review-img { width: 85%; border: 2px solid var(--gold); border-radius: 10px; margin: 15px 0; box-shadow: 0 0 15px var(--gold); }
+        .rank-bar { width: 80%; height: 15px; background: #333; border-radius: 10px; margin: 15px 0; border: 1px solid var(--gold); overflow: hidden; }
+        .rank-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #FF9800, var(--gold)); transition: width 1s; }
+        
+        .action-btn { padding: 14px 30px; font-size: 18px; background: #ff9800; color: white; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; }
+
+        .shake { animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+    </style>
+</head>
+<body>
+
+    <div id="mobile-container">
+        <div id="top-bar">
+            <div id="game-title">BẢO VỆ TRÍ NHỚ</div>
+            <div class="info-row">
+                <div id="lives-display">Mạng: ❤️❤️❤️❤️❤️</div>
+                <div id="score-container">Mục tiêu: <span id="score">0</span>/10</div>
+            </div>
+        </div>
+
+        <div id="sky"></div>
+        <div id="base"></div>
+
+        <div id="rule-modal" class="modal active">
+            <h2 style="color: var(--gold);">Level 2 - MÀN THĂNG CẤP</h2>
+            <img src="0-den-10.png" id="review-img" alt="Ôn tập">
+            <p>Bắn hạ 10 mục tiêu 00-10 bảo vệ căn cứ!</p>
+            <button class="action-btn" onclick="startGame()">BẮT ĐẦU NGAY</button>
+        </div>
+
+        <div id="win-modal" class="modal">
+            <img src="1dong.png" id="victory-badge" alt="Huy hiệu Đồng">
+            <h2 style="color: var(--gold);">TUYỆT VỜI!</h2>
+            <p>Bạn đã thăng cấp +400 điểm</p>
+            <p id="total-time" style="color: #ccc; font-size: 14px;">Thời gian: 0s</p>
+            <div class="rank-bar"><div class="rank-fill" id="progress-fill"></div></div>
+            <p style="font-size: 12px; color: var(--gold);">Tổng điểm: 800 / 800</p>
+            <button class="action-btn" onclick="window.location.href='lv3.html'">CHINH PHỤC HUY HIỆU BẠC ➔</button>
+        </div>
+
+        <div id="lose-modal" class="modal">
+            <h2 style="color: #f44336;">SẮP ĐƯỢC RỒI!</h2>
+            <button class="action-btn" onclick="location.reload()">CHƠI LUÔN ➔</button>
+        </div>
+    </div>
+
+    <script>
+        const bgMusic = new Audio('nhac-nen.mp3'); bgMusic.loop = true;
+        const reloadSound = new Audio('nap-dan.mp3');
+        const boomSound = new Audio('bum.mp3');
+        const wrongSound = new Audio('sai.mp3');
+        const victorySound = new Audio('chien-thang.mp3');
+
+        const gameData = [
+            { id: 0, label: "00", text: "Quả trứng" }, { id: 1, label: "01", text: "Cây dù" },
+            { id: 2, label: "02", text: "Con vịt" }, { id: 3, label: "03", text: "Trái tim" },
+            { id: 4, label: "04", text: "Cái ghế" }, { id: 5, label: "05", text: "Quả táo" },
+            { id: 6, label: "06", text: "Vỏ ốc" }, { id: 7, label: "07", text: "Cây rìu" },
+            { id: 8, label: "08", text: "Người tuyết" }, { id: 9, label: "09", text: "Hươu" },
+            { id: 10, label: "10", text: "Con heo" }
+        ];
+
+        let lives = 5; let score = 0;
+        let gameActive = false; let isWon = false; 
+        let startTime;
+        let meteorQueue = [];
+        let spawnTimeout;
+
+        // --- HỆ THỐNG PHÍM TẮT & CHUYỂN LEVEL ---
+        let inputBuffer = "";
+        let inputTimeout;
+
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            
+            // 1. Test nhanh Thắng/Thua
+            if (key === 't') {
+                if(!gameActive) startGame(); // Nếu chưa start thì start luôn để tránh lỗi logic
+                handleWin();
+                return;
+            }
+            if (key === 'l') {
+                handleLose();
+                return;
+            }
+
+            // 2. Chuyển hướng nhanh theo số (00-99)
+            if (e.key >= '0' && e.key <= '9') {
+                clearTimeout(inputTimeout);
+                inputBuffer += e.key;
+                if (inputBuffer.length === 2) {
+                    let levelNum = parseInt(inputBuffer);
+                    if (levelNum === 2) location.reload();
+                    else window.location.href = `lv${levelNum}.html`;
+                    inputBuffer = "";
+                }
+                inputTimeout = setTimeout(() => { inputBuffer = ""; }, 1000);
+            }
+        });
+
+        const base = document.getElementById('base');
+        gameData.forEach(item => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'turret-wrapper';
+            wrapper.innerHTML = `<div class="cannon" id="cannon-${item.id}">🗼</div>
+                                 <button class="btn-shoot" onclick="shoot(${item.id})">${item.label}</button>`;
+            base.appendChild(wrapper);
+        });
+
+        function startGame() {
+            document.getElementById('rule-modal').classList.remove('active');
+            gameActive = true; isWon = false;
+            startTime = Date.now();
+            score = 0; lives = 5;
+            document.getElementById('score').innerText = score;
+            meteorQueue = [...gameData].sort(() => Math.random() - 0.5).slice(0, 10);
+            updateLivesUI();
+            bgMusic.play().catch(() => {});
+            spawnNext();
+        }
+
+        function spawnNext() {
+            if (!gameActive || isWon || meteorQueue.length === 0) return;
+            const item = meteorQueue.pop();
+            const meteor = document.createElement('div');
+            meteor.className = 'meteor';
+            meteor.dataset.id = item.id;
+            meteor.dataset.dead = "false";
+            meteor.style.left = (Math.random() * 75 + 5) + '%';
+            meteor.style.animation = `fall 10s linear forwards`; 
+            meteor.innerHTML = `<img src="${item.label}.png"><div class="meteor-text">${item.text}</div>`;
+            document.getElementById('sky').appendChild(meteor);
+
+            meteor.addEventListener('animationend', () => {
+                if (document.body.contains(meteor)) {
+                    if(meteor.dataset.dead === "false" && !isWon) {
+                        takeDamage();
+                    }
+                    meteor.remove();
+                    setTimeout(checkGameState, 100);
+                }
+            });
+            spawnTimeout = setTimeout(spawnNext, 4500);
+        }
+
+        function shoot(id) {
+            if (!gameActive || isWon) return;
+            reloadSound.currentTime = 0; reloadSound.play().catch(() => {});
+            
+            const activeMeteors = Array.from(document.getElementsByClassName('meteor'))
+                                .filter(m => parseInt(m.dataset.id) === id && m.dataset.dead === "false");
+            
+            if (activeMeteors.length > 0) {
+                const target = activeMeteors.reduce((prev, curr) => (curr.offsetTop > prev.offsetTop) ? curr : prev);
+                target.dataset.dead = "true";
+                
+                const cannon = document.getElementById('cannon-' + id);
+                const cRect = cannon.getBoundingClientRect();
+                const tRect = target.getBoundingClientRect();
+                const containerRect = document.getElementById('mobile-container').getBoundingClientRect();
+                
+                drawLaser(cRect.left + cRect.width/2 - containerRect.left, cRect.top - containerRect.top, tRect.left + tRect.width/2 - containerRect.left, tRect.top + tRect.height/2 - containerRect.top);
+                
+                score++;
+                showPopup(target, "+30");
+                document.getElementById('score').innerText = score;
+                
+                boomSound.currentTime = 0; boomSound.play().catch(() => {});
+
+                target.innerHTML = '<span style="font-size:50px">💥</span>';
+                
+                if (score >= 10) {
+                    isWon = true;
+                    setTimeout(handleWin, 400);
+                }
+
+                setTimeout(() => { 
+                    if(target.parentNode) target.remove(); 
+                    if(!isWon) checkGameState(); 
+                }, 200);
+                
+            } else {
+                takeDamage();
+            }
+        }
+
+        function showPopup(target, text) {
+            const popup = document.createElement('div');
+            popup.className = 'points-popup';
+            popup.innerText = text;
+            const rect = target.getBoundingClientRect();
+            const container = document.getElementById('mobile-container').getBoundingClientRect();
+            popup.style.left = (rect.left - container.left) + "px";
+            popup.style.top = (rect.top - container.top) + "px";
+            document.getElementById('sky').appendChild(popup);
+            setTimeout(() => popup.remove(), 1000);
+        }
+
+        function drawLaser(x1, y1, x2, y2) {
+            const l = document.createElement('div');
+            const len = Math.hypot(x2-x1, y2-y1);
+            const ang = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
+            l.className = 'laser'; 
+            l.style.width = len + 'px'; 
+            l.style.left = x1 + 'px';
+            l.style.top = y1 + 'px'; 
+            l.style.transform = `rotate(${ang}deg)`;
+            document.getElementById('mobile-container').appendChild(l); 
+            setTimeout(() => l.remove(), 200);
+        }
+
+        function takeDamage() {
+            if(!gameActive || isWon) return;
+            wrongSound.currentTime = 0; wrongSound.play().catch(() => {});
+            lives--;
+            updateLivesUI();
+            document.getElementById('mobile-container').classList.add('shake');
+            setTimeout(() => document.getElementById('mobile-container').classList.remove('shake'), 300);
+            if (lives <= 0) handleLose();
+        }
+
+        function updateLivesUI() {
+            let h = ''; for(let i=0; i<lives; i++) h += '❤️';
+            document.getElementById('lives-display').innerText = "Mạng: " + (h || '💀');
+        }
+
+        function checkGameState() {
+            if (!gameActive || isWon) return;
+            const remainingMeteors = document.querySelectorAll('.meteor[data-dead="false"]').length;
+            if (meteorQueue.length === 0 && remainingMeteors === 0 && score < 10) {
+                handleLose();
+            }
+        }
+
+        function handleWin() {
+            gameActive = false;
+            isWon = true;
+            clearTimeout(spawnTimeout);
+            const time = Math.floor((Date.now() - (startTime || Date.now())) / 1000);
+            document.getElementById('total-time').innerText = `Thời gian: ${time}s`;
+            document.getElementById('win-modal').classList.add('active');
+            setTimeout(() => document.getElementById('progress-fill').style.width = "100%", 500);
+            victorySound.play().catch(() => {});
+        }
+
+        function handleLose() {
+            if (isWon) return;
+            gameActive = false;
+            clearTimeout(spawnTimeout);
+            document.getElementById('lose-modal').classList.add('active');
+        }
+    </script>
+</body>
+</html>

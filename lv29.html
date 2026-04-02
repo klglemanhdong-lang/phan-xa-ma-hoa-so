@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Level 29: Kim Cương Tối Thượng (50-99)</title>
+    <style>
+        :root {
+            --electric: #00FBFF;
+            --gold: #FFD700;
+            --bg-dark: #050505;
+            --red: #FF4444;
+            --green: #00FF88;
+            --diamond: #e0faff;
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; background: #000; color: white; 
+            margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        }
+
+        #mobile-container {
+            width: 100vw; height: 100vh; max-width: 430px;
+            background-color: var(--bg-dark);
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: cover;
+            position: relative; display: flex; flex-direction: column;
+        }
+
+        /* Top Bar */
+        #top-bar { padding: 15px; background: rgba(0,0,0,0.85); border-bottom: 3px solid var(--gold); z-index: 10; }
+        .info-row { display: flex; justify-content: space-between; font-weight: bold; align-items: center; }
+        #live-score { color: var(--gold); font-size: 24px; text-shadow: 0 0 10px var(--gold); }
+        
+        #timer-bar { width: 100%; height: 10px; background: #222; margin-top: 10px; border-radius: 5px; overflow: hidden; border: 1px solid #444; }
+        #timer-fill { width: 100%; height: 100%; background: var(--electric); transition: width 0.1s linear; }
+        .time-warning { background: var(--red) !important; animation: blink 0.5s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        /* Quiz Area */
+        #quiz-container { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: relative; }
+        #question-box {
+            font-size: 85px; font-weight: 900; color: var(--gold);
+            text-shadow: 0 0 25px var(--gold);
+            background: rgba(255,255,255,0.05); width: 170px; height: 170px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 25px; border: 4px solid var(--gold);
+            margin-bottom: 30px;
+        }
+
+        /* Options */
+        #options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
+        .option-card {
+            background: white; border-radius: 18px; padding: 8px;
+            border: 5px solid transparent; transition: 0.2s; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; aspect-ratio: 1/1;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+        }
+        .option-card img { width: 85%; height: 85%; object-fit: contain; }
+        .option-card.correct-tap { border-color: var(--green); background: #e0fff0; transform: scale(0.95); }
+        .option-card.wrong-tap { border-color: var(--red); background: #fff0f0; }
+
+        /* Modals */
+        .modal { 
+            display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.98); 
+            flex-direction: column; align-items: center; justify-content: center; 
+            z-index: 2000; padding: 25px; text-align: center;
+        }
+        .modal.active { display: flex; }
+
+        .zoom-effect { animation: pulseZoom 2s infinite ease-in-out; }
+        @keyframes pulseZoom { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .badge-img { width: 220px; filter: drop-shadow(0 0 30px var(--diamond)); }
+
+        .action-btn { padding: 18px 50px; font-size: 22px; background: var(--gold); color: #000; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin-top: 25px; box-shadow: 0 0 20px rgba(255,215,0,0.4); }
+
+        .score-float {
+            position: absolute; font-weight: bold; font-size: 42px;
+            pointer-events: none; animation: floatUp 0.8s ease-out forwards; 
+            z-index: 100; left: 50%; transform: translateX(-50%); top: 20%;
+        }
+        @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -100px); } }
+        
+        #lives-display { color: var(--red); font-size: 20px; margin-top: 5px; letter-spacing: 3px; }
+        .shake { animation: shakeAnim 0.3s ease-in-out; }
+        @keyframes shakeAnim { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+    </style>
+</head>
+<body>
+
+<div id="mobile-container">
+    <div id="top-bar">
+        <div class="info-row">
+            <span style="color: var(--gold)">LV 29: ĐỈNH CAO</span>
+            <div id="live-score">0</div>
+            <span>Câu: <span id="current-q">1</span>/<span id="total-q-display">50</span></span>
+        </div>
+        <div id="lives-display">❤️❤️❤️</div>
+        <div id="timer-bar"><div id="timer-fill"></div></div>
+    </div>
+
+    <div id="quiz-container">
+        <div id="question-box">--</div>
+        <div id="options-grid"></div>
+    </div>
+
+    <div id="review-modal" class="modal active">
+        <h2 style="color: var(--gold); margin-bottom: 10px;">HÀNH TRÌNH CHƯA DỪNG LẠI</h2>
+        <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 20px; border: 1px dashed var(--gold);">
+            <p style="color: #fff; font-size: 18px; margin: 0;">Chinh phục bộ số <b>50 - 99</b>.</p>
+            <p style="color: var(--electric); font-size: 14px; margin-top: 10px;">Bạn có 3 lượt sai. Hãy giữ vững sự tập trung!</p>
+        </div>
+        <button class="action-btn" onclick="startGame()">BẮT ĐẦU NGAY</button>
+    </div>
+
+    <div id="win-modal" class="modal">
+        <div class="zoom-effect">
+            <img src="11thulinhtritue.png" class="badge-img">
+            <div style="color: var(--diamond); font-size: 28px; font-weight: bold; margin-top: 15px; text-shadow: 0 0 15px var(--diamond);">KIM CƯƠNG TỐI THƯỢNG</div>
+        </div>
+        <h1 style="color: #fff; margin: 15px 0;">TUYỆT ĐỈNH!</h1>
+        <div style="background: linear-gradient(145deg, rgba(255,215,0,0.2), rgba(0,0,0,0.5)); padding: 20px; border-radius: 20px; width: 100%; border: 1px solid var(--gold);">
+            <div style="color: var(--gold); font-size: 36px; font-weight: bold; margin-bottom: 5px;">+<span id="bonus-points">0</span> ĐIỂM</div>
+            <p style="color: #fff; margin: 0;">Bạn đã chinh phục bộ số 50-99!</p>
+        </div>
+        <button class="action-btn" onclick="window.location.href='lv30.html'">TIẾP TỤC ➔</button>
+    </div>
+
+    <div id="lose-modal" class="modal">
+        <h2 style="color: var(--red); font-size: 32px;">HẾT LƯỢT!</h2>
+        <p style="color: #ccc; padding: 0 10px;">Bạn đã tiêu tốn hết số tim.<br>Đừng nản lòng, hãy thử lại!</p>
+        <div id="lose-stats" style="color: var(--gold); font-size: 22px; margin: 15px 0; font-weight: bold;">Đúng: 0/50</div>
+        <button class="action-btn" onclick="location.reload()">THỬ LẠI ➔</button>
+    </div>
+</div>
+
+<script>
+    const baseData = Array.from({length: 50}, (_, i) => (50 + i).toString());
+
+    const backgrounds = ['b1.jpg', 'b2.jpg', 'b3.jpg', 'b4.jpg', 'b5.jpg', 'b6.jpg'];
+    const randomBG = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+    document.getElementById('mobile-container').style.backgroundImage = `url('${randomBG}')`;
+
+    const bgMusic = new Audio('nhac-nen-2.mp3'); bgMusic.loop = true; bgMusic.volume = 0.2;
+    const dungSound = new Audio('dung.mp3');
+    const saiSound = new Audio('sai.mp3');
+    const winSound = new Audio('chien-thang.mp3');
+    const time5sSound = new Audio('time5s.mp3');
+
+    let quizData = [], currentIdx = 0, correctCount = 0, totalScore = 0, timeLeft = 10, timerInterval, is5sPlayed = false;
+    let lives = 3;
+
+    function startGame() {
+        document.getElementById('review-modal').classList.remove('active');
+        bgMusic.play().catch(() => {});
+        quizData = [...baseData].sort(() => Math.random() - 0.5);
+        document.getElementById('total-q-display').innerText = quizData.length;
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizData.length) { 
+            checkFinalResult(); 
+            return; 
+        }
+
+        timeLeft = 10; is5sPlayed = false;
+        const tFill = document.getElementById('timer-fill');
+        tFill.style.width = "100%"; tFill.classList.remove('time-warning');
+        document.getElementById('current-q').innerText = currentIdx + 1;
+
+        const correctNum = quizData[currentIdx];
+        document.getElementById('question-box').innerText = correctNum;
+
+        let options = [correctNum];
+        while (options.length < 4) {
+            let rand = baseData[Math.floor(Math.random() * baseData.length)];
+            if (!options.includes(rand)) options.push(rand);
+        }
+        options.sort(() => Math.random() - 0.5);
+
+        const grid = document.getElementById('options-grid');
+        grid.innerHTML = '';
+        options.forEach(opt => {
+            const card = document.createElement('div');
+            card.className = 'option-card';
+            card.innerHTML = `<img src="${opt}.png">`;
+            card.onclick = () => processAnswer(opt, correctNum, card);
+            grid.appendChild(card);
+        });
+        startTimer();
+    }
+
+    function processAnswer(selected, correct, card) {
+        clearInterval(timerInterval);
+        document.getElementById('options-grid').style.pointerEvents = 'none';
+
+        if (selected === correct) {
+            correctCount++;
+            totalScore += 10;
+            if(card) card.classList.add('correct-tap');
+            showFloatingText("+10", "var(--green)");
+            dungSound.currentTime = 0; dungSound.play();
+            
+            currentIdx++;
+            setTimeout(() => {
+                document.getElementById('options-grid').style.pointerEvents = 'auto';
+                loadQuestion();
+            }, 500);
+        } else {
+            lives--;
+            updateLivesUI();
+            if(card) card.classList.add('wrong-tap');
+            showFloatingText("X", "var(--red)");
+            saiSound.currentTime = 0; saiSound.play();
+            
+            document.getElementById('mobile-container').classList.add('shake');
+            setTimeout(() => document.getElementById('mobile-container').classList.remove('shake'), 300);
+
+            if (lives <= 0) {
+                setTimeout(() => checkFinalResult(), 600);
+            } else {
+                currentIdx++;
+                setTimeout(() => {
+                    document.getElementById('options-grid').style.pointerEvents = 'auto';
+                    loadQuestion();
+                }, 800);
+            }
+        }
+        document.getElementById('live-score').innerText = totalScore;
+    }
+
+    function updateLivesUI() {
+        const display = document.getElementById('lives-display');
+        let hearts = "";
+        for(let i=0; i<3; i++) {
+            hearts += (i < lives) ? "❤️" : "🖤";
+        }
+        display.innerHTML = hearts;
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            timeLeft -= 0.1;
+            document.getElementById('timer-fill').style.width = (timeLeft / 10) * 100 + "%";
+            if (timeLeft <= 5) {
+                document.getElementById('timer-fill').classList.add('time-warning');
+                if (!is5sPlayed) { time5sSound.play(); is5sPlayed = true; }
+            }
+            if (timeLeft <= 0) processAnswer(null, "TIME_UP", null);
+        }, 100);
+    }
+
+    function checkFinalResult() {
+        clearInterval(timerInterval);
+        bgMusic.pause();
+
+        if (lives > 0 && currentIdx >= quizData.length) {
+            winSound.play();
+            document.getElementById('win-modal').classList.add('active');
+            animateNumber(0, 15000, 3000, 'bonus-points');
+        } else {
+            document.getElementById('lose-stats').innerText = `Đúng: ${correctCount}/${quizData.length}`;
+            document.getElementById('lose-modal').classList.add('active');
+        }
+    }
+
+    function animateNumber(start, end, duration, elementId) {
+        const obj = document.getElementById(elementId);
+        const range = end - start;
+        const startTime = new Date().getTime();
+        const endTime = startTime + duration;
+        function update() {
+            const now = new Date().getTime();
+            const remaining = Math.max((endTime - now) / duration, 0);
+            const value = Math.round(end - (remaining * range));
+            obj.innerHTML = value.toLocaleString();
+            if (value < end) requestAnimationFrame(update);
+        }
+        update();
+    }
+
+    function showFloatingText(text, color) {
+        const float = document.createElement('div');
+        float.className = 'score-float';
+        float.innerText = text; float.style.color = color;
+        document.getElementById('quiz-container').appendChild(float);
+        setTimeout(() => float.remove(), 800);
+    }
+
+    // Tính năng "Thắng là thua" - Test nhanh (Phím T)
+    window.addEventListener('keydown', (e) => { 
+        if (e.key.toLowerCase() === 't') { 
+            correctCount = 50; 
+            currentIdx = 50; 
+            lives = 3; 
+            checkFinalResult(); 
+        } 
+    });
+</script>
+</body>
+</html>

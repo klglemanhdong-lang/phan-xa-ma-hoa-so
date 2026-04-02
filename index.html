@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Chọn Cấp Độ - Siêu Trí Nhớ</title>
+    <style>
+        :root {
+            --gold: #FFD700;
+            --electric: #00FBFF;
+            --bg: #0a0a0a;
+        }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            color: var(--gold);
+            text-shadow: 0 0 15px var(--gold);
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        .menu-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            width: 90%;
+            max-width: 400px;
+        }
+        .level-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--electric);
+            color: white;
+            padding: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            text-align: center;
+        }
+        .level-btn:hover {
+            background: var(--electric);
+            color: #000;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 251, 255, 0.4);
+        }
+        .special {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .special:hover {
+            background: var(--gold);
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>CHỌN MỐC THỬ THÁCH</h1>
+
+    <div class="menu-container">
+        <a href="lv1.html" class="level-btn">BẮT ĐẦU TỪ LEVEL 1</a>
+        <a href="lv10.html" class="level-btn">BẮT ĐẦU TỪ LEVEL 10</a>
+        <a href="lv18.html" class="level-btn">BẮT ĐẦU TỪ LEVEL 18</a>
+        <a href="lv20.html" class="level-btn">BẮT ĐẦU TỪ LEVEL 20</a>
+    </div>
+
+</body>
+</html>

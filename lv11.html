@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bắn Tỉa Siêu Trí Nhớ - Level 11</title>
+    <style>
+        :root {
+            --card-width: 70px;
+            --card-height: 95px;
+            --primary-red: #d32f2f;
+            --gold: #FFD700;
+            --theme-blue: #00E5FF;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #1a1a1a; margin: 0; padding: 0; 
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; overflow: hidden; user-select: none; 
+        }
+
+        #mobile-wrapper {
+            width: 100vw; height: 100vh;
+            max-width: 430px; max-height: 932px;
+            background: #000 url('b4.jpg') no-repeat center center;
+            background-size: cover;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            display: flex; flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        /* --- MÀN HÌNH BẮT ĐẦU --- */
+        #start-screen {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); color: white; padding: 20px; box-sizing: border-box; z-index: 1500;
+        }
+        #start-screen.hidden { display: none; }
+        
+        #logo-title {
+            font-size: 28px; color: var(--theme-blue); text-transform: uppercase;
+            font-weight: bold; text-shadow: 0 0 10px var(--theme-blue); margin-bottom: 20px; text-align: center;
+        }
+
+        #review-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+            margin-bottom: 25px; width: 90%;
+        }
+        .review-item {
+            background: white; border-radius: 10px; padding: 5px;
+            display: flex; align-items: center; justify-content: center; aspect-ratio: 1;
+        }
+        .review-item img { width: 90%; height: 90%; object-fit: contain; }
+
+        /* --- UI CHƠI --- */
+        #game-ui { display: none; flex-direction: column; width: 100%; height: 100%; padding: 10px; box-sizing: border-box; }
+        #game-ui.active { display: flex; }
+
+        #header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        h1 { color: white; font-size: 18px; text-transform: uppercase; margin: 0; text-shadow: 1px 1px 2px #000; }
+        #lives-display { font-size: 20px; }
+
+        #timer-bar-container {
+            width: 100%; height: 22px; background: rgba(0,0,0,0.3);
+            border-radius: 11px; overflow: hidden; position: relative;
+            margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.3);
+        }
+        #timer-bar-fill {
+            height: 100%; width: 100%; background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.1s linear;
+        }
+        #timer-text {
+            position: absolute; width: 100%; text-align: center; top: 0;
+            font-size: 14px; font-weight: bold; color: white; line-height: 22px;
+        }
+
+        .row { 
+            display: grid; grid-template-columns: repeat(3, 1fr); 
+            gap: 12px; justify-items: center; margin-bottom: 20px; padding: 0 5px;
+        }
+
+        .card { 
+            width: var(--card-width); height: var(--card-height); 
+            background-color: #fff; border: 2px solid #4CAF50; border-radius: 8px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.15); 
+            position: relative; transition: transform 0.1s;
+        }
+
+        .number-card { font-size: 26px; color: #1976D2; font-weight: bold; }
+        .image-card { background-color: #FFF9C4; border-color: #FBC02D; }
+        .image-card img { width: 85%; height: 60%; object-fit: contain; }
+        .image-name { font-size: 10px; color: #333; margin-top: 4px; text-align: center; font-weight: bold; }
+
+        /* --- HIỆU ỨNG --- */
+        .selected { border: 3px solid #FF5722 !important; transform: scale(1.05); }
+        .selected::after { content: "🎯"; position: absolute; top: -8px; right: -8px; font-size: 16px; }
+        .burning { animation: burn 0.5s forwards; pointer-events: none; }
+        @keyframes burn { 100% { opacity: 0; transform: translateY(-20px) scale(0.5); } }
+
+        /* --- MODALS --- */
+        .modal { 
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95); color: white; flex-direction: column; 
+            align-items: center; justify-content: center; z-index: 3000; text-align: center;
+            padding: 20px; box-sizing: border-box;
+        }
+        .modal.active { display: flex; }
+        .action-btn { 
+            padding: 15px 35px; font-size: 18px; background: var(--theme-blue); 
+            color: black; border: none; border-radius: 30px; cursor: pointer;
+            font-weight: bold; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .rank-bar { width: 80%; height: 18px; background: #333; border-radius: 10px; margin: 15px 0; border: 2px solid var(--gold); overflow: hidden; }
+        .rank-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #FF9800, var(--gold)); transition: width 1s; }
+        .shake { animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+    </style>
+</head>
+<body>
+
+    <div id="mobile-wrapper">
+        <div id="start-screen">
+            <div id="logo-title">LEVEL 11: ÔN TẬP 4x</div>
+            <p style="color: var(--gold); margin-bottom: 15px;">Quy ước ôn tập: a[SỐ].png</p>
+            <div id="review-grid">
+                <!-- Chèn ảnh ôn tập bằng JavaScript -->
+            </div>
+            <button class="action-btn" onclick="startGame()">BẮT ĐẦU CHƠI</button>
+        </div>
+
+        <div id="game-ui">
+            <div id="header">
+                <h1>VÒNG 11</h1>
+                <div id="lives-display">❤️❤️❤️</div>
+            </div>
+
+            <div id="timer-bar-container">
+                <div id="timer-bar-fill"></div>
+                <div id="timer-text"><span id="time-left-num">10</span>s</div>
+            </div>
+
+            <div id="top-row" class="row"></div>
+            <div id="bottom-row" class="row"></div>
+        </div>
+
+        <div id="win-modal" class="modal">
+            <h2 style="color: var(--gold);">THẬT TUYỆT VỜI! 🚀</h2>
+            <p>Bạn đã hoàn thành Level 11</p>
+            <div style="color: #4CAF50; font-size: 24px; font-weight: bold; margin: 10px 0;">+ 400 ĐIỂM</div>
+            <p id="total-time-win" style="color: #ccc;">Thời gian: 0 giây</p>
+            <div class="rank-bar"><div class="rank-fill" id="win-rank-fill"></div></div>
+            <p style="color: var(--gold);">Tiến trình: 5200 / 5200</p>
+            <button class="action-btn" onclick="window.location.href='lv12.html'">TIẾP TỤC CẤP 12 ➔</button>
+        </div>
+
+        <div id="lose-modal" class="modal">
+            <h2>HÃY THỬ LẠI! 😢</h2>
+            <p>Bình tĩnh để ghi nhớ tốt hơn nhé!</p>
+            <button class="action-btn" style="background: #f44336;" onclick="location.reload()">CHƠI LẠI</button>
+        </div>
+    </div>
+
+    <script>
+        const bgMusic = new Audio('nhac-nen-2.mp3'); bgMusic.loop = true; bgMusic.volume = 0.15;
+        const reloadSound = new Audio('nap-dan.mp3');
+        const boomSound = new Audio('bum.mp3'); boomSound.volume = 1.0;
+        const wrongSound = new Audio('sai.mp3'); wrongSound.volume = 1.0;
+        const victorySound = new Audio('chien-thang.mp3');
+
+        // Dữ liệu Level 11
+        const gameData = [
+            { id: 43, label: "43", text: "Người lướt sóng" },
+            { id: 44, label: "44", text: "Rừng thông" },
+            { id: 46, label: "46", text: "Cung tên" },
+            { id: 48, label: "48", text: "Doraemon" },
+            { id: 49, label: "49", text: "Ly tách" }
+        ];
+
+        // Tự động nạp ảnh ôn tập: a[SỐ].png
+        const rGrid = document.getElementById('review-grid');
+        gameData.forEach(d => {
+            const div = document.createElement('div');
+            div.className = 'review-item';
+            div.innerHTML = `<img src="a${d.id}.png">`;
+            rGrid.appendChild(div);
+        });
+
+        let lives = 3;
+        let turnTimeLeft = 10;
+        let matchedPairs = 0;
+        let totalStartTime;
+        let timerInterval;
+        let selectedId = null;
+        let selectedEl = null;
+        let isAnimating = false;
+
+        // TEST NHANH
+        window.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 't') handleWin();
+            if (e.key.toLowerCase() === 'l') handleLose();
+        });
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-ui').classList.add('active');
+            lives = 3; matchedPairs = 0;
+            totalStartTime = Date.now();
+            updateLivesUI();
+            renderBoard();
+            startTimer();
+            bgMusic.play().catch(() => {});
+        }
+
+        function renderBoard() {
+            const top = document.getElementById('top-row');
+            const bottom = document.getElementById('bottom-row');
+            top.innerHTML = ''; bottom.innerHTML = '';
+
+            // Hàng trên: Số (Hiển thị text)
+            gameData.sort(() => Math.random() - 0.5).forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card number-card';
+                card.innerText = item.label;
+                card.onclick = () => handleNumberClick(item.id, card);
+                top.appendChild(card);
+            });
+
+            // Hàng dưới: Hình mã hóa theo quy ước [số].png
+            const shuffled = [...gameData].sort(() => Math.random() - 0.5);
+            shuffled.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card image-card';
+                card.innerHTML = `<img src="${item.id}.png"><div class="image-name">${item.text}</div>`;
+                card.onclick = () => handleImageClick(item.id, card);
+                bottom.appendChild(card);
+            });
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            turnTimeLeft = 10;
+            updateTimerUI();
+            timerInterval = setInterval(() => {
+                turnTimeLeft -= 0.1;
+                if (turnTimeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    takeDamage();
+                }
+                updateTimerUI();
+            }, 100);
+        }
+
+        function updateTimerUI() {
+            const fill = document.getElementById('timer-bar-fill');
+            const num = document.getElementById('time-left-num');
+            fill.style.width = (turnTimeLeft / 10) * 100 + "%";
+            num.innerText = Math.ceil(turnTimeLeft);
+            fill.style.background = turnTimeLeft < 3 ? "red" : "linear-gradient(90deg, #4CAF50, #8BC34A)";
+        }
+
+        function handleNumberClick(id, el) {
+            if (isAnimating || el.style.opacity === "0") return;
+            if (selectedEl) selectedEl.classList.remove('selected');
+            reloadSound.currentTime = 0; reloadSound.play().catch(() => {});
+            selectedId = id;
+            selectedEl = el;
+            el.classList.add('selected');
+        }
+
+        function handleImageClick(id, el) {
+            if (isAnimating || selectedId === null || el.style.opacity === "0") return;
+            isAnimating = true;
+
+            if (selectedId === id) {
+                boomSound.currentTime = 0; boomSound.play().catch(() => {});
+                const pair = [el, selectedEl];
+                pair.forEach(c => c.classList.add('burning'));
+                setTimeout(() => {
+                    pair.forEach(c => c.style.opacity = "0");
+                    matchedPairs++;
+                    if (matchedPairs === gameData.length) handleWin();
+                    else { resetTurn(); startTimer(); }
+                }, 500);
+            } else {
+                takeDamage();
+                el.classList.add('shake');
+                setTimeout(() => {
+                    el.classList.remove('shake');
+                    if(selectedEl) selectedEl.classList.remove('selected');
+                    resetTurn();
+                }, 500);
+            }
+        }
+
+        function resetTurn() { selectedId = null; selectedEl = null; isAnimating = false; }
+
+        function takeDamage() {
+            wrongSound.currentTime = 0; wrongSound.play().catch(() => {});
+            lives--; updateLivesUI();
+            document.getElementById('mobile-wrapper').classList.add('shake');
+            setTimeout(() => document.getElementById('mobile-container').classList.remove('shake'), 300);
+            if (lives <= 0) handleLose();
+            else startTimer();
+        }
+
+        function updateLivesUI() {
+            let h = ''; for(let i=0; i<lives; i++) h += '❤️';
+            document.getElementById('lives-display').innerText = h || '💀';
+        }
+
+        function handleWin() {
+            clearInterval(timerInterval);
+            const time = Math.floor((Date.now() - totalStartTime) / 1000);
+            document.getElementById('total-time-win').innerText = `Hoàn thành trong: ${time} giây`;
+            document.getElementById('win-modal').classList.add('active');
+            setTimeout(() => document.getElementById('win-rank-fill').style.width = '100%', 500);
+            victorySound.play().catch(() => {});
+            bgMusic.pause();
+        }
+
+        function handleLose() {
+            clearInterval(timerInterval);
+            bgMusic.pause();
+            document.getElementById('lose-modal').classList.add('active');
+        }
+    </script>
+</body>
+</html>

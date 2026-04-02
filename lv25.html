@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Level 25: Siêu Trí Nhớ 90-99</title>
+    <style>
+        :root {
+            --electric: #00FBFF;
+            --bg-dark: #050505;
+            --card-w: 78px; 
+            --card-h: 110px;
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; background: #000; color: white; 
+            margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        }
+
+        #mobile-container {
+            width: 100vw; height: 100vh; max-width: 430px;
+            /* Đã thay đổi background từ b4.png sang b5.png */
+            background: var(--bg-dark) url('b5.png') no-repeat center center; background-size: cover;
+            position: relative; display: flex; flex-direction: column;
+        }
+
+        #top-bar { padding: 12px; background: rgba(0,0,0,0.9); border-bottom: 2px solid var(--electric); z-index: 10; }
+        .info-row { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; }
+        #timer-bar { width: 100%; height: 6px; background: #222; margin-top: 8px; border-radius: 3px; overflow: hidden; }
+        #timer-fill { width: 100%; height: 100%; background: var(--electric); transition: width 0.1s linear; }
+
+        #grid { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; 
+            padding: 10px; justify-items: center; flex-grow: 1; align-content: center;
+        }
+
+        .card {
+            width: var(--card-w); height: var(--card-h); 
+            background: #fff; border-radius: 12px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.3s; 
+            border: 2px solid rgba(255,255,255,0.3); 
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .card:nth-child(4n+1) { background: #e3f2fd; }
+        .card:nth-child(4n+2) { background: #f1f8e9; }
+        .card:nth-child(4n+3) { background: #fff3e0; }
+        .card:nth-child(4n+4) { background: #fce4ec; }
+
+        .card.selected { border-color: var(--electric); transform: scale(1.05); z-index: 2; box-shadow: 0 0 20px var(--electric); }
+        .card.matched { opacity: 0; pointer-events: none; transform: scale(0); transition: 0.4s; }
+        .card img { width: 80%; height: 55%; object-fit: contain; }
+        .card b { font-size: 32px; color: #1a1a1a; }
+        .card span { font-size: 11px; color: #333; font-weight: bold; text-align: center; margin-top: 4px; }
+
+        #lightning-canvas { position: absolute; inset: 0; pointer-events: none; z-index: 100; }
+
+        .modal { 
+            display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.95); 
+            flex-direction: column; align-items: center; justify-content: center; 
+            z-index: 2000; padding: 20px; text-align: center;
+        }
+        .modal.active { display: flex; }
+
+        .review-box { width: 100%; max-width: 320px; margin: 15px 0; border: 3px solid var(--electric); border-radius: 10px; overflow: hidden; background: #fff; }
+        .review-box img { width: 100%; display: block; }
+        .rank-bar { width: 100%; height: 15px; background: #333; border-radius: 10px; margin: 15px 0; border: 1px solid var(--electric); overflow: hidden; }
+        .rank-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--electric), #fff); transition: width 2.5s cubic-bezier(0.1, 0, 0.3, 1); }
+        .action-btn { padding: 16px 45px; font-size: 20px; background: var(--electric); color: #000; border: none; border-radius: 40px; cursor: pointer; font-weight: bold; }
+
+        .shake { animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+    </style>
+</head>
+<body>
+
+<div id="mobile-container">
+    <canvas id="lightning-canvas"></canvas>
+    <div id="top-bar">
+        <div class="info-row">
+            <span id="lives-ui">❤️ ❤️ ❤️</span>
+            <span style="color: var(--electric)">LV25: SIÊU TRÍ TUỆ</span>
+            <span>Khớp: <span id="score-ui">0</span>/10</span>
+        </div>
+        <div id="timer-bar"><div id="timer-fill"></div></div>
+    </div>
+    <div id="grid"></div>
+
+    <div id="start-modal" class="modal active">
+        <h1 style="color: var(--electric); font-size: 28px;">GHI NHỚ 90 ĐẾN 99</h1>
+        <div class="review-box"><img src="90-99.jpg"></div>
+        <button class="action-btn" onclick="startGame()">KHAI HỎA</button>
+    </div>
+
+    <div id="win-modal" class="modal">
+        <h1 style="color: var(--electric); font-size: 45px;">XUẤT SẮC!</h1>
+        <div id="finish-time">Thời gian: 0 giây</div>
+        <div class="rank-bar"><div class="rank-fill" id="progress-fill"></div></div>
+        <button class="action-btn" onclick="nextLevel()">TIẾP TỤC ➔</button>
+    </div>
+
+    <div id="lose-modal" class="modal">
+        <h1 style="color: #ff5252; font-size: 35px;">CHƯA THÀNH CÔNG!</h1>
+        <p>Hết thời gian hoặc hết mạng!</p>
+        <button class="action-btn" onclick="location.reload()">THỬ LẠI</button>
+    </div>
+</div>
+
+<script>
+    const bgMusic = new Audio('nhac-nen.mp3'); bgMusic.loop = true;
+    const zapSound = new Audio('bum.mp3');
+    const wrongSound = new Audio('sai.mp3');
+
+    const gameNumbers = [90, 91, 92, 93, 94, 95, 96, 97, 98, 99];
+    const dataDetails = {
+        90: "Dao thớt", 91: "Bóng rổ", 92: "Bóng bay", 93: "Cúp", 94: "Gốc cây",
+        95: "Bác sĩ", 96: "Trống", 97: "Con dê", 98: "Ong và hoa", 99: "Vợt cầu lông"
+    };
+
+    const TURN_TIME = 10;
+    let lives = 3, score = 0, timeLeft = TURN_TIME, timer = null, selected = null, startTime;
+    const canvas = document.getElementById('lightning-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Thêm phím tắt test nhanh T (Thắng) / L (Thua)
+    window.addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === 't') handleWin();
+        if (e.key.toLowerCase() === 'l') handleLose();
+    });
+
+    function resize() {
+        canvas.width = document.getElementById('mobile-container').clientWidth;
+        canvas.height = document.getElementById('mobile-container').clientHeight;
+    }
+    window.addEventListener('resize', resize); resize();
+
+    function startGame() {
+        document.getElementById('start-modal').classList.remove('active');
+        startTime = Date.now();
+        bgMusic.play().catch(() => {});
+        renderCards();
+        resetAndStartTimer(); // Chạy thời gian ngay lập tức
+    }
+
+    function renderCards() {
+        const grid = document.getElementById('grid');
+        let cards = [];
+        gameNumbers.forEach(num => {
+            cards.push({ id: num, html: `<b>${num}</b>` });
+            cards.push({ id: num, html: `<img src="${num}.png"><span>${dataDetails[num]}</span>` });
+        });
+        cards.sort(() => Math.random() - 0.5);
+        grid.innerHTML = '';
+        cards.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.innerHTML = c.html;
+            div.onclick = () => handleChoice(c.id, div);
+            grid.appendChild(div);
+        });
+    }
+
+    function resetAndStartTimer() {
+        clearInterval(timer);
+        timeLeft = TURN_TIME;
+        updateTimerUI();
+        
+        timer = setInterval(() => {
+            timeLeft -= 0.1;
+            updateTimerUI();
+            
+            if (timeLeft <= 0) {
+                // Hết 10 giây mà chưa xong 1 cặp -> Mất mạng và reset thời gian luôn
+                takeDamage(null);
+                resetAndStartTimer(); 
+            }
+        }, 100);
+    }
+
+    function updateTimerUI() {
+        const percent = (timeLeft / TURN_TIME) * 100;
+        document.getElementById('timer-fill').style.width = percent + "%";
+    }
+
+    function handleChoice(id, el) {
+        if (el.classList.contains('matched') || el === selected?.el) return;
+
+        if (!selected) {
+            selected = { id, el };
+            el.classList.add('selected');
+        } else {
+            const p1 = selected.el;
+            const p2 = el;
+
+            if (selected.id === id) {
+                // ĐÚNG -> Reset thời gian ngay lập tức để chọn cặp tiếp theo
+                drawLightning(p1, p2);
+                p2.classList.add('selected');
+                score++;
+                document.getElementById('score-ui').innerText = score;
+                zapSound.currentTime = 0; zapSound.play();
+                
+                setTimeout(() => {
+                    p1.classList.add('matched');
+                    p2.classList.add('matched');
+                    selected = null;
+                    if (score === 10) handleWin();
+                }, 200);
+                
+                resetAndStartTimer(); // RESET THỜI GIAN NGAY KHI CHỌN ĐÚNG
+            } else {
+                // SAI -> Trừ mạng và reset thời gian luôn
+                takeDamage(p2);
+                resetAndStartTimer(); // RESET THỜI GIAN NGAY KHI CHỌN SAI
+            }
+        }
+    }
+
+    function takeDamage(el) {
+        wrongSound.play();
+        lives--;
+        document.getElementById('lives-ui').innerText = "❤️ ".repeat(lives) || "💀";
+        if(el) {
+            el.classList.add('shake');
+            setTimeout(() => el.classList.remove('shake'), 300);
+        }
+        if(selected) selected.el.classList.remove('selected');
+        selected = null;
+        if (lives <= 0) handleLose();
+    }
+
+    function drawLightning(el1, el2) {
+        const r1 = el1.getBoundingClientRect();
+        const r2 = el2.getBoundingClientRect();
+        const container = document.getElementById('mobile-container').getBoundingClientRect();
+        let x1 = r1.left + r1.width/2 - container.left;
+        let y1 = r1.top + r1.height/2 - container.top;
+        let x2 = r2.left + r2.width/2 - container.left;
+        let y2 = r2.top + r2.height/2 - container.top;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath(); ctx.moveTo(x1, y1);
+        for(let i=0; i<10; i++) {
+            ctx.lineTo(x1+(x2-x1)*i/10 + (Math.random()-0.5)*25, y1+(y2-y1)*i/10 + (Math.random()-0.5)*25);
+        }
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = "white"; ctx.lineWidth = 4; ctx.shadowBlur = 15; ctx.shadowColor = "#00FBFF";
+        ctx.stroke();
+        setTimeout(() => ctx.clearRect(0, 0, canvas.width, canvas.height), 150);
+    }
+
+    function handleWin() {
+        clearInterval(timer);
+        const time = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('finish-time').innerText = `Tổng thời gian: ${time} giây`;
+        document.getElementById('win-modal').classList.add('active');
+        setTimeout(() => { document.getElementById('progress-fill').style.width = "100%"; }, 500);
+    }
+
+    function handleLose() {
+        clearInterval(timer);
+        document.getElementById('lose-modal').classList.add('active');
+    }
+
+    function nextLevel() {
+        window.location.href = 'lv26.html';
+    }
+</script>
+</body>
+</html>

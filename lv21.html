@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Level 21: Sóc Nhảy Trí Tuệ</title>
+    <style>
+        :root {
+            --gold: #FFD700;
+            --bg-dark: #050505;
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; background: #000; color: white; 
+            margin: 0; overflow: hidden; display: flex; justify-content: center;
+        }
+
+        #mobile-container {
+            width: 100vw; height: 100vh; max-width: 430px;
+            background: var(--bg-dark) url('b21.jpg') no-repeat center center; background-size: cover;
+            position: relative; display: flex; flex-direction: column;
+        }
+
+        /* Top Bar */
+        #top-bar { padding: 6px 12px; background: rgba(0,0,0,0.85); border-bottom: 2px solid var(--gold); z-index: 10; }
+        .info-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; }
+
+        /* Bầu trời */
+        #sky { position: relative; flex-grow: 1; width: 100%; overflow: hidden; }
+
+        .target { 
+            position: absolute; display: flex; flex-direction: column; align-items: center; 
+            top: -120px; z-index: 5;
+        }
+        .target img { width: 55px; height: 55px; object-fit: contain; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 4px; }
+        .target-label { background: var(--gold); color: #000; padding: 1px 5px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-top: 3px; }
+
+        /* Bảng điều khiển & Sóc */
+        #controls { 
+            background: rgba(0,0,0,0.9); border-top: 1px solid var(--gold); 
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 25px 10px 15px 10px; 
+            z-index: 20; position: relative;
+        }
+
+        #squirrel {
+            position: absolute; width: 65px; height: 65px;
+            font-size: 45px; display: flex; justify-content: center; align-items: center;
+            left: 50%; transform: translateX(-50%);
+            bottom: calc(100% - 5px); 
+            transition: left 0.25s ease-out, bottom 0.35s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            z-index: 25; pointer-events: none;
+            animation: idleMove 4s infinite ease-in-out;
+        }
+
+        @keyframes idleMove {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            25% { transform: translateX(-80%) translateY(-5px); }
+            50% { transform: translateX(-50%) translateY(0); }
+            75% { transform: translateX(-20%) translateY(-5px); }
+        }
+
+        .btn-jump { 
+            padding: 10px 0; font-size: 15px; font-weight: bold; border-radius: 20px;
+            border: 1px solid var(--gold); background: #222; color: var(--gold); cursor: pointer;
+        }
+        .btn-jump:active { background: var(--gold); color: #000; transform: scale(0.9); }
+
+        .modal { 
+            display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.98); 
+            flex-direction: column; align-items: center; justify-content: center; 
+            z-index: 1000; padding: 20px; text-align: center;
+        }
+        .modal.active { display: flex; }
+        .review-box { width: 100%; max-width: 300px; margin: 15px 0; border: 2px solid var(--gold); border-radius: 10px; overflow: hidden; background: #fff; }
+        .review-box img { width: 100%; display: block; }
+
+        .action-btn { padding: 15px 40px; font-size: 18px; background: var(--gold); color: #000; border: none; border-radius: 40px; cursor: pointer; font-weight: bold; }
+        
+        .rank-bar { width: 80%; height: 12px; background: #333; border-radius: 10px; margin: 15px 0; border: 1px solid var(--gold); overflow: hidden; }
+        .rank-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, var(--gold)); transition: width 1s; }
+
+        .shake { animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+    </style>
+</head>
+<body>
+
+<div id="mobile-container">
+    <div id="top-bar">
+        <div class="info-row">
+            <div id="lives-display">Mạng: ❤️❤️❤️</div>
+            <div style="color: var(--gold)">LEVEL 21</div>
+            <div>Mục tiêu: <span id="score">0</span>/13</div>
+        </div>
+    </div>
+
+    <div id="sky"></div>
+
+    <div id="controls">
+        <div id="squirrel">🐿️</div>
+    </div>
+
+    <div id="rule-modal" class="modal active">
+        <h2 style="color: var(--gold);">ÔN TẬP 70-79</h2>
+        <div class="review-box"><img src="70-79.jpg"></div>
+        <p>Bấm số tương ứng để Sóc nhảy lên đớp mục tiêu!</p>
+        <button class="action-btn" onclick="startGame()">KHAI HỎA</button>
+    </div>
+
+    <div id="win-modal" class="modal">
+        <h2 style="color: var(--gold);">CHIẾN THẮNG! 🚀</h2>
+        <p>Bạn đã hoàn thành thử thách Level 21</p>
+        <div style="color: #4CAF50; font-size: 24px; font-weight: bold;">+ 500 ĐIỂM</div>
+        <div class="rank-bar"><div class="rank-fill" id="progress-fill"></div></div>
+        <button class="action-btn" onclick="window.location.href='lv22.html'">TIẾP TỤC LEVEL 22 ➔</button>
+    </div>
+
+    <div id="lose-modal" class="modal">
+        <h2 style="color: #f44336;">THẤT BẠI!</h2>
+        <p>Đừng bỏ cuộc, hãy thử lại nhé!</p>
+        <button class="action-btn" onclick="location.reload()">THỬ LẠI ➔</button>
+    </div>
+</div>
+
+<script>
+    const bgMusic = new Audio('nhac-nen.mp3'); bgMusic.loop = true;
+    const jumpSound = new Audio('nap-dan.mp3');
+    const eatSound = new Audio('bum.mp3');
+    const wrongSound = new Audio('sai.mp3');
+    const victorySound = new Audio('chien-thang.mp3');
+
+    const gameNumbers = [70, 71, 72, 73, 74, 75, 76, 77, 78, 79];
+    const dataLabels = { 70: "Sầu riêng", 71: "Lá cờ", 72: "Con ma", 73: "Trâu", 74: "Con đường", 75: "Xe tăng", 76: "Nước mía", 77: "Súng", 78: "Cà chua", 79: "Dừa" };
+
+    let score = 0, lives = 3, gameActive = false, isJumping = false;
+    let spawnList = [];
+    let spawnTimeout;
+
+    const controls = document.getElementById('controls');
+    gameNumbers.forEach(num => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-jump';
+        btn.innerText = num;
+        btn.onclick = () => handleInput(num);
+        controls.appendChild(btn);
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === 't') handleWin();
+        if (e.key.toLowerCase() === 'l') handleLose();
+    });
+
+    function startGame() {
+        document.getElementById('rule-modal').classList.remove('active');
+        gameActive = true;
+        score = 0; lives = 3;
+        spawnList = [...gameNumbers, 71, 75, 79].sort(() => Math.random() - 0.5);
+        updateLivesUI();
+        bgMusic.play().catch(() => {});
+        spawnNext();
+    }
+
+    function spawnNext() {
+        if (!gameActive || spawnList.length === 0) return;
+        
+        const num = spawnList.pop();
+        const target = document.createElement('div');
+        target.className = 'target';
+        target.dataset.num = num;
+        target.style.left = (Math.random() * 75 + 5) + '%';
+        target.innerHTML = `<img src="${num}.png"><div class="target-label">${dataLabels[num]}</div>`;
+        
+        document.getElementById('sky').appendChild(target);
+
+        const duration = 9000; 
+        const animation = target.animate([{ top: '-120px' }, { top: '100%' }], { duration: duration, fill: 'forwards' });
+
+        animation.onfinish = () => {
+            if (document.body.contains(target)) {
+                target.remove();
+                takeDamage();
+            }
+        };
+
+        target.dataset.animationId = animation;
+        spawnTimeout = setTimeout(spawnNext, 3500);
+    }
+
+    function handleInput(num) {
+        if (!gameActive || isJumping) return;
+        const targets = Array.from(document.getElementsByClassName('target'));
+        const match = targets
+            .filter(t => t.dataset.num == num)
+            .reduce((prev, curr) => (curr.offsetTop > (prev ? prev.offsetTop : -1)) ? curr : prev, null);
+
+        if (match) {
+            jumpTo(match);
+        } else {
+            // ĐÃ KHẮC PHỤC: Gọi hàm takeDamage() khi bấm sai số không có trên màn hình
+            takeDamage();
+        }
+    }
+
+    function jumpTo(targetEl) {
+        isJumping = true;
+        const squirrel = document.getElementById('squirrel');
+        const container = document.getElementById('mobile-container');
+        const cRect = container.getBoundingClientRect();
+        const tRect = targetEl.getBoundingClientRect();
+        const ctRect = document.getElementById('controls').getBoundingClientRect();
+
+        squirrel.style.animation = "none";
+
+        const targetX = tRect.left + tRect.width / 2 - cRect.left;
+        const targetY = tRect.top + tRect.height / 2 - cRect.top;
+
+        jumpSound.currentTime = 0; jumpSound.play();
+        squirrel.innerText = "🚀";
+        squirrel.style.left = targetX + "px";
+        squirrel.style.bottom = (ctRect.height - targetY + ctRect.top) + "px";
+
+        setTimeout(() => {
+            targetEl.dataset.dead = "true";
+            eatSound.currentTime = 0; eatSound.play();
+            targetEl.innerHTML = '<span style="font-size:40px">💥</span>';
+            score++;
+            document.getElementById('score').innerText = score;
+
+            setTimeout(() => {
+                if(targetEl.parentNode) targetEl.remove();
+                squirrel.innerText = "🐿️";
+                squirrel.style.left = "50%";
+                squirrel.style.bottom = "calc(100% - 5px)";
+                
+                setTimeout(() => {
+                    squirrel.style.animation = "idleMove 4s infinite ease-in-out";
+                    isJumping = false;
+                }, 300);
+
+                if (score >= 13) handleWin();
+            }, 200);
+        }, 350);
+    }
+
+    function takeDamage() {
+        if(!gameActive) return;
+        lives--;
+        updateLivesUI();
+        wrongSound.play();
+        document.getElementById('mobile-container').classList.add('shake');
+        setTimeout(() => document.getElementById('mobile-container').classList.remove('shake'), 300);
+        if (lives <= 0) handleLose();
+    }
+
+    function updateLivesUI() {
+        let h = ''; for(let i=0; i<lives; i++) h += '❤️';
+        document.getElementById('lives-display').innerText = "Mạng: " + (h || '💀');
+    }
+
+    function handleWin() {
+        gameActive = false;
+        clearTimeout(spawnTimeout);
+        victorySound.play().catch(() => {});
+        document.getElementById('win-modal').classList.add('active');
+        setTimeout(() => document.getElementById('progress-fill').style.width = "100%", 500);
+    }
+
+    function handleLose() {
+        gameActive = false;
+        clearTimeout(spawnTimeout);
+        document.getElementById('lose-modal').classList.add('active');
+    }
+</script>
+</body>
+</html>

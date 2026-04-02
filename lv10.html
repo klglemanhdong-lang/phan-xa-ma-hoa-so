@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Level 10: Trí Dũng Song Toàn</title>
+    <style>
+        :root {
+            --bg-dark: #0B0C10;
+            --gold: #FFD700;
+            --theme-blue: #00E5FF;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #1a1a1a; color: white; margin: 0; 
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; overflow: hidden; user-select: none; 
+        }
+
+        #mobile-container {
+            width: 100vw; height: 100vh;
+            max-width: 430px; max-height: 932px;
+            background: var(--bg-dark) url('b1.jpg') no-repeat center center;
+            background-size: cover;
+            position: relative; display: flex; flex-direction: column;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8); border: 1px solid #333;
+        }
+
+        /* --- HEADER --- */
+        #top-bar { 
+            display: flex; flex-direction: column; padding: 15px; 
+            background: rgba(0, 0, 0, 0.85); border-bottom: 2px solid var(--theme-blue); z-index: 10; 
+        }
+        .info-row { display: flex; justify-content: space-between; width: 100%; font-size: 16px; font-weight: bold; }
+        #timer-container { width: 100%; height: 10px; background: #333; margin-top: 10px; border-radius: 5px; overflow: hidden; }
+        #timer-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #00FF00, #FF0000); transition: width 0.1s linear; }
+
+        /* --- PLAY AREA --- */
+        #quiz-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; }
+        
+        #question-box {
+            position: relative;
+            background: rgba(255, 255, 255, 0.1); border: 3px solid var(--theme-blue);
+            width: 110px; height: 110px; border-radius: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 56px; font-weight: bold; color: var(--theme-blue);
+            text-shadow: 0 0 15px var(--theme-blue); margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        /* Slash Glow Effect */
+        .slash-effect::before {
+            content: ""; position: absolute; top: 50%; left: -50%; width: 200%; height: 5px;
+            background: white; box-shadow: 0 0 20px 5px white, 0 0 40px 10px var(--theme-blue);
+            transform: translateY(-50%) rotate(-45deg); animation: slashAnimation 0.4s ease-out forwards; z-index: 2;
+        }
+        @keyframes slashAnimation { 0% { left: -100%; opacity: 1; } 100% { left: 100%; opacity: 0; } }
+
+        #options-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+            width: 100%; max-width: 300px;
+        }
+        .option-card {
+            background: white; border: 4px solid transparent; border-radius: 12px;
+            aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.2s; padding: 10px; box-sizing: border-box;
+        }
+        .option-card img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+        .correct { border-color: #00FF00 !important; background: #E8F5E9 !important; transform: scale(0.95); }
+        .wrong { border-color: #FF0000 !important; background: #FFEBEE !important; }
+
+        /* --- MODALS --- */
+        .modal { 
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.98); flex-direction: column; align-items: center; 
+            justify-content: flex-start; z-index: 1000; padding: 20px; text-align: center; box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .modal.active { display: flex; }
+        
+        .action-btn { 
+            padding: 18px 50px; font-size: 20px; background: var(--theme-blue); 
+            color: black; border: none; border-radius: 45px; cursor: pointer; font-weight: bold; text-transform: uppercase; margin-top: 10px;
+            flex-shrink: 0;
+        }
+
+        /* START MODAL SPECIFIC */
+        #start-modal h2 { margin-top: 20px; margin-bottom: 10px; flex-shrink: 0; }
+        
+        #review-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+            width: 95%; max-width: 380px; margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+        .review-item {
+            background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 8px; padding: 4px; aspect-ratio: 1;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .review-item img { width: 90%; height: 90%; object-fit: contain; }
+
+        #start-modal p {
+            font-size: 14px; margin: 0 0 10px 0; line-height: 1.4;
+            flex-shrink: 0;
+        }
+
+        /* WIN MODAL SPECIFIC */
+        #win-modal { justify-content: center; }
+        #win-badge { width: 220px; margin-bottom: 15px; filter: drop-shadow(0 0 15px var(--gold)); }
+        .rank-bar { width: 80%; height: 12px; background: #333; border-radius: 10px; margin: 15px 0; border: 1px solid var(--gold); overflow: hidden; }
+        .rank-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #FFE082, var(--gold)); transition: width 1.5s; }
+
+        /* LOSE MODAL SPECIFIC */
+        #lose-modal { justify-content: center; }
+
+        .shake { animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+        .hit-shake { animation: hitShake 0.2s; }
+        @keyframes hitShake { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1) rotate(2deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="mobile-container">
+        <div id="top-bar">
+            <div class="info-row">
+                <span>Câu: <span id="current-q">1</span>/20</span>
+                <span>Mạng: <span id="lives-display">❤️❤️❤️</span></span>
+            </div>
+            <div id="timer-container"><div id="timer-fill"></div></div>
+        </div>
+
+        <div id="quiz-area">
+            <div id="question-box">--</div>
+            <div id="options-grid">
+                <div class="option-card" id="opt-0" onclick="checkAnswer(0)"></div>
+                <div class="option-card" id="opt-1" onclick="checkAnswer(1)"></div>
+                <div class="option-card" id="opt-2" onclick="checkAnswer(2)"></div>
+                <div class="option-card" id="opt-3" onclick="checkAnswer(3)"></div>
+            </div>
+        </div>
+
+        <div id="start-modal" class="modal active">
+            <h2 style="color: var(--theme-blue);">TRÍ NHỚ PRO</h2>
+            <div id="review-grid">
+                <!-- Hình ảnh ôn tập sẽ được JS chèn vào đây[cite: 3] -->
+            </div>
+            <p>Đảm bảo bạn đã ôn tập kỹ.<br>
+            <span style="color: #FF5252;">Thất bại:</span> Về Level 7. <span style="color: var(--gold);">Chiến thắng:</span> Nhận huy hiệu.</p>
+            <button class="action-btn" onclick="initGame()">Tôi sẵn sàng</button>
+        </div>
+
+        <div id="win-modal" class="modal">
+            <img src="5tridungsongtoan.png" id="win-badge">
+            <h2 style="color: var(--gold);">Trí nhớ tuyệt vời !</h2>
+            <div style="color: #4CAF50; font-size: 26px; font-weight: bold;">+ 1000 ĐIỂM</div>
+            <p id="total-time-win" style="color: #ccc;">Hoàn thành trong: 0 giây</p>
+            <div class="rank-bar"><div class="rank-fill" id="win-rank-fill"></div></div>
+            <p style="color: var(--gold);">Tiến trình: 4800 / 4800</p>
+            <button class="action-btn" onclick="window.location.href='lv11.html'">Chinh phục cấp độ mới</button>
+        </div>
+
+        <div id="lose-modal" class="modal">
+            <h2 style="color: #FF5252; font-size: 28px;">THẤT BẠI!</h2>
+            <p style="font-size: 18px;">Bạn cần rèn luyện lại mốc quan trọng.<br>Đang đưa bạn về Level 7...</p>
+            <button class="action-btn" onclick="window.location.href='lv7.html'">Quay lại ngay</button>
+        </div>
+    </div>
+
+    <script>
+        const bgMusic = new Audio('nhac-nen-2.mp3'); 
+        bgMusic.loop = true;
+        bgMusic.volume = 0.15; 
+        const correctSound = new Audio('bum.mp3');
+        const wrongSound = new Audio('sai.mp3');
+        const victorySound = new Audio('chien-thang.mp3');
+
+        const rawNumbers = ["03", "06", "08", "07", "10", "14", "15", "17", "19", "20", "21", "23", "25", "26", "28", "32", "34", "35", "38", "39"];
+
+        let gameQuestions = [];
+        let currentQuestionIndex = 0;
+        let lives = 3;
+        let timeLeft = 10;
+        let timerInterval;
+        let gameActive = false;
+        let startTime;
+
+        const reviewGrid = document.getElementById('review-grid');
+        rawNumbers.forEach(num => {
+            const div = document.createElement('div');
+            div.className = 'review-item';
+            div.innerHTML = `<img src="a${num}.png">`; // Sử dụng ảnh a[số].png[cite: 3]
+            reviewGrid.appendChild(div);
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 't') handleWin();
+            if (e.key.toLowerCase() === 'l') handleLose();
+        });
+
+        function initGame() {
+            bgMusic.play().catch(e => console.log("Music blocked"));
+            document.getElementById('start-modal').classList.remove('active');
+            currentQuestionIndex = 0; lives = 3; gameActive = true;
+            startTime = Date.now();
+            gameQuestions = [...rawNumbers].sort(() => Math.random() - 0.5);
+            updateLivesUI(); nextQuestion();
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex >= 20) { handleWin(); return; }
+            timeLeft = 10; clearInterval(timerInterval);
+            
+            const qBox = document.getElementById('question-box');
+            qBox.innerText = gameQuestions[currentQuestionIndex];
+            qBox.classList.remove('slash-effect', 'hit-shake'); 
+            
+            document.getElementById('current-q').innerText = currentQuestionIndex + 1;
+
+            let correctNum = gameQuestions[currentQuestionIndex];
+            let otherNums = rawNumbers.filter(n => n !== correctNum);
+            otherNums.sort(() => Math.random() - 0.5);
+            let options = [correctNum, otherNums[0], otherNums[1], otherNums[2]];
+            options.sort(() => Math.random() - 0.5);
+
+            for (let i = 0; i < 4; i++) {
+                const card = document.getElementById(`opt-${i}`);
+                card.innerHTML = `<img src="${options[i]}.png">`; // Sử dụng ảnh [số].png[cite: 3]
+                card.dataset.number = options[i];
+                card.className = 'option-card';
+            }
+
+            timerInterval = setInterval(() => {
+                timeLeft -= 0.1;
+                document.getElementById('timer-fill').style.width = (timeLeft * 10) + "%";
+                if (timeLeft <= 0) { clearInterval(timerInterval); checkAnswer(-1); }
+            }, 100);
+        }
+
+        function checkAnswer(index) {
+            if (!gameActive) return;
+            clearInterval(timerInterval);
+            const correctNum = gameQuestions[currentQuestionIndex];
+            const qBox = document.getElementById('question-box');
+            let isCorrect = false;
+
+            if (index !== -1) {
+                const selectedCard = document.getElementById(`opt-${index}`);
+                if (selectedCard.dataset.number === correctNum) {
+                    selectedCard.classList.add('correct');
+                    qBox.classList.add('slash-effect', 'hit-shake'); 
+                    correctSound.play().catch(()=>{});
+                    isCorrect = true;
+                } else {
+                    selectedCard.classList.add('wrong');
+                    wrongSound.play().catch(()=>{});
+                }
+            } else {
+                wrongSound.play().catch(()=>{});
+            }
+
+            if (isCorrect) {
+                currentQuestionIndex++; 
+                setTimeout(nextQuestion, 600);
+            } else {
+                lives--; updateLivesUI();
+                document.getElementById('mobile-container').classList.add('shake');
+                setTimeout(() => document.getElementById('mobile-container').classList.remove('shake'), 300);
+                if (lives <= 0) setTimeout(handleLose, 600);
+                else setTimeout(nextQuestion, 600);
+            }
+        }
+
+        function updateLivesUI() {
+            let h = ""; for (let i = 0; i < lives; i++) h += "❤️";
+            document.getElementById('lives-display').innerText = h || "💀";
+        }
+
+        function handleWin() {
+            gameActive = false; clearInterval(timerInterval);
+            const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('total-time-win').innerText = `Hoàn thành trong: ${timeTaken} giây`;
+            document.getElementById('win-modal').classList.add('active');
+            setTimeout(() => { document.getElementById('win-rank-fill').style.width = '100%'; }, 300);
+            victorySound.play().catch(()=>{});
+            bgMusic.pause();
+        }
+
+        function handleLose() {
+            gameActive = false; clearInterval(timerInterval);
+            bgMusic.pause();
+            document.getElementById('lose-modal').classList.add('active');
+            setTimeout(() => { window.location.href = 'lv7.html'; }, 3000);
+        }
+    </script>
+</body>
+</html>

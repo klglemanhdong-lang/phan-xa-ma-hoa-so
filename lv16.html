@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Level 19: Bậc Thầy Trí Nhớ - Pro Version</title>
+    <style>
+        :root {
+            --electric: #00FBFF;
+            --gold: #FFD700;
+            --bg-dark: #050505;
+            --red: #FF4444;
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; background: #000; color: white; 
+            margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        }
+
+        #mobile-container {
+            width: 100vw; height: 100vh; max-width: 430px;
+            background: var(--bg-dark) url('b5.png') no-repeat center center; background-size: cover;
+            position: relative; display: flex; flex-direction: column;
+        }
+
+        /* Top Bar */
+        #top-bar { padding: 15px; background: rgba(0,0,0,0.85); border-bottom: 2px solid var(--electric); z-index: 10; }
+        .info-row { display: flex; justify-content: space-between; font-weight: bold; align-items: center; }
+        #live-score { color: var(--gold); font-size: 20px; text-shadow: 0 0 10px var(--gold); }
+        
+        #timer-bar { width: 100%; height: 8px; background: #222; margin-top: 10px; border-radius: 4px; overflow: hidden; }
+        #timer-fill { width: 100%; height: 100%; background: var(--electric); transition: width 0.1s linear; }
+
+        /* Vùng câu hỏi */
+        #quiz-container { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: relative; }
+
+        #question-box {
+            font-size: 80px; font-weight: 900; color: var(--electric);
+            text-shadow: 0 0 20px var(--electric); margin-bottom: 30px;
+            background: rgba(255,255,255,0.1); width: 160px; height: 160px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 20px; border: 3px solid var(--electric);
+            transition: transform 0.3s, filter 0.3s;
+        }
+
+        /* Hiệu ứng chớp sáng khi chuyển câu */
+        .flash { filter: brightness(3) white; transform: scale(1.1); }
+
+        /* Vùng đáp án */
+        #options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
+        .option-card {
+            background: white; border-radius: 15px; padding: 10px;
+            border: 4px solid transparent; transition: 0.2s; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; aspect-ratio: 1/1;
+        }
+        .option-card img { width: 85%; height: 85%; object-fit: contain; }
+
+        /* Hiệu ứng điểm bay lên */
+        .score-float {
+            position: absolute; font-weight: bold; font-size: 30px;
+            pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 100;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-100px); opacity: 0; }
+        }
+
+        /* Modals */
+        .modal { 
+            display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.98); 
+            flex-direction: column; align-items: center; justify-content: center; 
+            z-index: 2000; padding: 20px; text-align: center;
+        }
+        .modal.active { display: flex; }
+
+        @keyframes pulseZoom { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .zoom-effect { animation: pulseZoom 2s infinite ease-in-out; }
+        #badge-img { width: 200px; filter: drop-shadow(0 0 25px var(--gold)); }
+        #badge-name { color: var(--gold); font-size: 26px; font-weight: bold; margin-top: 15px; }
+
+        .rank-bar { width: 100%; height: 12px; background: #333; border-radius: 10px; margin: 15px 0; border: 1px solid var(--gold); overflow: hidden; }
+        .rank-fill { width: 95.2%; height: 100%; background: linear-gradient(90deg, #ffd700, #fff); transition: width 2s; }
+
+        .action-btn { padding: 16px 45px; font-size: 20px; background: var(--electric); color: #000; border: none; border-radius: 40px; cursor: pointer; font-weight: bold; }
+
+        .review-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; width: 100%; margin: 15px 0; max-height: 45vh; overflow-y: auto; }
+        .rev-item { background: #fff; padding: 2px; border-radius: 4px; border: 1px solid var(--electric); }
+        .rev-item img { width: 100%; display: block; }
+    </style>
+</head>
+<body>
+
+<div id="mobile-container">
+    <div id="top-bar">
+        <div class="info-row">
+            <span style="color: var(--electric)">LV 19: BẬC THẦY</span>
+            <div id="live-score">0</div>
+            <span>Câu: <span id="current-q">1</span>/32</span>
+        </div>
+        <div id="timer-bar"><div id="timer-fill"></div></div>
+    </div>
+
+    <div id="quiz-container">
+        <div id="question-box">--</div>
+        <div id="options-grid"></div>
+    </div>
+
+    <div id="review-modal" class="modal active">
+        <h2 style="color: var(--electric)">ÔN TẬP BẬC THẦY</h2>
+        <div class="review-grid" id="review-list"></div>
+        <button class="action-btn" onclick="startGame()">BẮT ĐẦU</button>
+    </div>
+
+    <div id="win-modal" class="modal">
+        <div class="zoom-effect">
+            <img src="8bacthaytrinho.png" id="badge-img">
+            <div id="badge-name">BẬC THẦY TRÍ NHỚ</div>
+        </div>
+        <h1 style="color: #fff; margin: 15px 0 5px 0;">BẠN ĐỈNH QUÁ!</h1>
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; width: 100%; box-sizing: border-box;">
+            <div style="color: var(--gold); font-size: 24px; font-weight: bold;" id="final-stats">Đúng: 0/32</div>
+            <div id="final-points" style="color: var(--electric); margin: 5px 0; font-size: 20px;">Điểm: 0</div>
+            <div class="rank-bar"><div class="rank-fill" id="progress-fill"></div></div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #aaa;">
+                <span>LV18: 8000</span>
+                <span style="color: var(--gold);">TỔNG: 8400</span>
+            </div>
+        </div>
+        <button class="action-btn" style="margin-top: 20px;" onclick="window.location.href='lv20.html'">TIẾP TỤC ➔</button>
+    </div>
+</div>
+
+<script>
+    const bgMusic = new Audio('nhac-nen-2.mp3'); 
+    bgMusic.loop = true;
+    bgMusic.volume = 0.07; // Giảm xuống 7%
+
+    const correctSound = new Audio('bum.mp3');
+    correctSound.volume = 1.0; // Tăng âm lượng hiệu ứng
+
+    const wrongSound = new Audio('sai.mp3');
+    wrongSound.volume = 1.0;
+
+    const bonusSound = new Audio('chien-thang.mp3'); // Âm thanh khi combo 3 câu
+    bonusSound.volume = 0.8;
+
+    const fullData = ["03", "06", "07", "08", "10", "14", "15", "17", "19", "20", "21", "23", "25", "26", "28", "32", "34", "35", "38", "39", "43", "44", "46", "48", "49", "50", "58", "59", "62", "64", "65", "69"];
+    
+    let currentIdx = 0, correctCount = 0, combo = 0, totalScore = 0, timeLeft = 10, timerInterval, quizData = [];
+
+    // Render Ôn tập
+    const rList = document.getElementById('review-list');
+    fullData.forEach(num => { rList.innerHTML += `<div class="rev-item"><img src="a${num}.png"></div>`; });
+
+    function startGame() {
+        document.getElementById('review-modal').classList.remove('active');
+        bgMusic.play().catch(() => {});
+        quizData = [...fullData].sort(() => Math.random() - 0.5);
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizData.length) { showResult(); return; }
+
+        timeLeft = 10;
+        document.getElementById('timer-fill').style.width = "100%";
+        document.getElementById('current-q').innerText = currentIdx + 1;
+        
+        const correctNum = quizData[currentIdx];
+        const qBox = document.getElementById('question-box');
+        
+        // Hiệu ứng chớp sáng khi đổi câu
+        qBox.classList.add('flash');
+        qBox.innerText = correctNum;
+        setTimeout(() => qBox.classList.remove('flash'), 300);
+
+        let options = [correctNum];
+        while (options.length < 4) {
+            let rand = fullData[Math.floor(Math.random() * fullData.length)];
+            if (!options.includes(rand)) options.push(rand);
+        }
+        options.sort(() => Math.random() - 0.5);
+
+        const grid = document.getElementById('options-grid');
+        grid.innerHTML = '';
+        options.forEach(opt => {
+            const card = document.createElement('div');
+            card.className = 'option-card';
+            card.innerHTML = `<img src="${opt}.png">`;
+            card.onclick = () => checkAnswer(opt, correctNum);
+            grid.appendChild(card);
+        });
+        startTimer();
+    }
+
+    function checkAnswer(selected, correct) {
+        clearInterval(timerInterval);
+        const container = document.getElementById('quiz-container');
+
+        if (selected === correct) {
+            correctCount++;
+            combo++;
+            totalScore += 5;
+            showFloatingText("+5", "var(--electric)");
+            correctSound.currentTime = 0; correctSound.play();
+
+            // Hiệu ứng Combo 3 câu
+            if (combo === 3) {
+                totalScore += 30;
+                combo = 0;
+                showFloatingText("COMBO +30!", "var(--gold)");
+                bonusSound.currentTime = 0; bonusSound.play();
+            }
+        } else {
+            combo = 0; // Reset combo khi sai
+            totalScore = Math.max(0, totalScore - 5);
+            showFloatingText("-5", "var(--red)");
+            wrongSound.currentTime = 0; wrongSound.play();
+        }
+
+        document.getElementById('live-score').innerText = totalScore;
+        currentIdx++;
+        setTimeout(loadQuestion, 400);
+    }
+
+    function showFloatingText(text, color) {
+        const float = document.createElement('div');
+        float.className = 'score-float';
+        float.innerText = text;
+        float.style.color = color;
+        float.style.left = (50 + (Math.random()*20 - 10)) + "%";
+        float.style.top = "40%";
+        document.getElementById('quiz-container').appendChild(float);
+        setTimeout(() => float.remove(), 800);
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            timeLeft -= 0.1;
+            document.getElementById('timer-fill').style.width = (timeLeft / 10) * 100 + "%";
+            if (timeLeft <= 0) { checkAnswer(null, "FORCE_FAIL"); }
+        }, 100);
+    }
+
+    function showResult() {
+        clearInterval(timerInterval);
+        document.getElementById('final-stats').innerText = `Đúng: ${correctCount}/32`;
+        document.getElementById('final-points').innerText = `Điểm đạt được: ${totalScore}`;
+        document.getElementById('win-modal').classList.add('active');
+        setTimeout(() => { document.getElementById('progress-fill').style.width = "100%"; }, 500);
+    }
+
+    // TEST NHANH (Phím T)
+    window.addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 't') showResult(); });
+</script>
+</body>
+</html>

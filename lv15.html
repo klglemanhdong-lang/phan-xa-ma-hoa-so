@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bắn Tỉa Siêu Trí Nhớ - Vòng 15</title>
+    <style>
+        :root { --card-width: 85px; --card-height: 120px; --gold: #FFD700; --cyan: #00E5FF; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; user-select: none; }
+        #mobile-wrapper { width: 100vw; height: 100vh; max-width: 430px; max-height: 932px; background: #000 url('b5.jpg') no-repeat center center; background-size: cover; position: relative; display: flex; flex-direction: column; box-shadow: 0 0 50px #000; border: 1px solid #333; }
+        
+        /* MÀN HÌNH BẮT ĐẦU + THẺ ÔN TẬP */
+        #start-screen { position: absolute; inset: 0; background: rgba(0,0,0,0.95); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; padding: 20px; text-align: center; }
+        .review-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 20px 0; width: 100%; }
+        .review-card { background: white; color: black; padding: 10px; border-radius: 10px; border: 2px solid var(--gold); display: flex; align-items: center; gap: 10px; }
+        .review-card img { width: 40px; height: 40px; object-fit: contain; }
+        .review-card b { font-size: 18px; color: #d32f2f; }
+
+        /* UI CHƠI */
+        #game-ui { display: none; flex-grow: 1; padding: 15px; flex-direction: column; }
+        #header { display: flex; justify-content: space-between; align-items: center; color: white; margin-bottom: 20px; }
+        #timer-bar { width: 100%; height: 15px; background: #333; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--cyan); overflow: hidden; }
+        #timer-fill { width: 100%; height: 100%; background: var(--cyan); transition: width 0.1s linear; }
+
+        /* LƯỚI 8 THẺ */
+        #card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; justify-items: center; align-content: center; flex-grow: 1; }
+        .card { width: var(--card-width); height: var(--card-height); background: white; border: 3px solid #ccc; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; position: relative; }
+        .card.selected { border-color: var(--gold); transform: scale(1.05); box-shadow: 0 0 15px var(--gold); }
+        .card.hidden-card { opacity: 0; pointer-events: none; transform: scale(0.5); }
+        .card img { width: 80%; height: 60%; object-fit: contain; pointer-events: none; }
+        .card span { font-size: 32px; font-weight: bold; color: #d32f2f; pointer-events: none; }
+        .card label { font-size: 10px; font-weight: bold; margin-top: 5px; color: #333; }
+
+        .action-btn { padding: 15px 40px; font-size: 18px; background: var(--gold); border: none; border-radius: 40px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        .modal { display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.9); color: white; flex-direction: column; align-items: center; justify-content: center; z-index: 3000; }
+        .shake { animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+    </style>
+</head>
+<body>
+
+<div id="mobile-wrapper">
+    <div id="start-screen">
+        <h2 style="color: var(--gold);">ÔN TẬP LEVEL 15</h2>
+        <div class="review-container" id="review-list"></div>
+        <button class="action-btn" onclick="startGame()">BẮT ĐẦU CHƠI</button>
+    </div>
+
+    <div id="game-ui">
+        <div id="header">
+            <span id="lives">❤️ ❤️ ❤️</span>
+            <b style="font-size: 20px; color: var(--cyan);">LEVEL 15</b>
+        </div>
+        <div id="timer-bar"><div id="timer-fill"></div></div>
+        <div id="card-grid"></div>
+    </div>
+
+    <div id="win-modal" class="modal">
+        <h1 style="color: var(--gold);">HOÀN THÀNH! 🏆</h1>
+        <button class="action-btn" onclick="window.location.href='lv16.html'">LEVEL 16 ➔</button>
+    </div>
+
+    <div id="lose-modal" class="modal">
+        <h1 style="color: #ff5252;">THẤT BẠI</h1>
+        <button class="action-btn" onclick="location.reload()">THỬ LẠI</button>
+    </div>
+</div>
+
+<script>
+    const bgMusic = new Audio('nhac-nen.mp3'); bgMusic.loop = true;
+    const boomSound = new Audio('bum.mp3');
+    const wrongSound = new Audio('sai.mp3');
+
+    const data = [
+        { id: 62, num: "62", img: "62.png", txt: "Điện thoại" },
+        { id: 64, num: "64", img: "64.png", txt: "Người lính" },
+        { id: 65, num: "65", img: "65.png", txt: "Cú mèo" },
+        { id: 69, num: "69", img: "69.png", txt: "Bát quái" }
+    ];
+
+    let lives = 3, timeLeft = 10, matched = 0, timer, selected = null;
+
+    // Hiển thị thẻ ôn tập
+    const rList = document.getElementById('review-list');
+    data.forEach(i => {
+        rList.innerHTML += `<div class="review-card"><b>${i.num}</b><img src="${i.img}"><span>${i.txt}</span></div>`;
+    });
+
+    function startGame() {
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('game-ui').style.display = 'flex';
+        bgMusic.play().catch(() => {});
+        renderCards();
+        resetTimer();
+    }
+
+    function renderCards() {
+        const grid = document.getElementById('card-grid');
+        // Tạo 4 thẻ số và 4 thẻ hình (Tổng 8)
+        let cards = [];
+        data.forEach(i => {
+            cards.push({ id: i.id, type: 'num', content: `<span>${i.num}</span>` });
+            cards.push({ id: i.id, type: 'img', content: `<img src="${i.img}"><label>${i.txt}</label>` });
+        });
+        cards.sort(() => Math.random() - 0.5);
+
+        grid.innerHTML = '';
+        cards.forEach((c, idx) => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.innerHTML = c.content;
+            div.onclick = () => handleSelect(c.id, div);
+            grid.appendChild(div);
+        });
+    }
+
+    function handleSelect(id, el) {
+        if (el.classList.contains('hidden-card') || el === selected?.el) return;
+
+        if (!selected) {
+            selected = { id, el };
+            el.classList.add('selected');
+        } else {
+            if (selected.id === id) {
+                // ĐÚNG
+                boomSound.currentTime = 0; boomSound.play();
+                el.classList.add('hidden-card');
+                selected.el.classList.add('hidden-card');
+                matched++;
+                selected = null;
+                if (matched === 4) handleWin();
+                else resetTimer();
+            } else {
+                // SAI
+                takeDamage();
+                el.classList.add('shake');
+                setTimeout(() => {
+                    el.classList.remove('shake');
+                    if(selected) selected.el.classList.remove('selected');
+                    selected = null;
+                }, 400);
+            }
+        }
+    }
+
+    function resetTimer() {
+        clearInterval(timer);
+        timeLeft = 10;
+        timer = setInterval(() => {
+            timeLeft -= 0.1;
+            document.getElementById('timer-fill').style.width = (timeLeft / 10) * 100 + "%";
+            if (timeLeft <= 0) { clearInterval(timer); takeDamage(); resetTimer(); }
+        }, 100);
+    }
+
+    function takeDamage() {
+        wrongSound.play();
+        lives--;
+        document.getElementById('lives').innerText = "❤️ ".repeat(lives) || "💀";
+        document.getElementById('mobile-wrapper').classList.add('shake');
+        setTimeout(() => document.getElementById('mobile-wrapper').classList.remove('shake'), 300);
+        if (lives <= 0) handleLose();
+    }
+
+    function handleWin() { clearInterval(timer); document.getElementById('win-modal').style.display = 'flex'; }
+    function handleLose() { clearInterval(timer); document.getElementById('lose-modal').style.display = 'flex'; }
+</script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Level 18: Thăng Cấp Cao Thủ Trí Nhớ</title>
+    <style>
+        :root {
+            --electric: #00FBFF;
+            --gold: #FFD700;
+            --bg-dark: #050505;
+            --card-w: 46px; /* Tối ưu để vừa 32 thẻ */
+            --card-h: 65px;
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; background: #000; color: white; 
+            margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        }
+
+        #mobile-container {
+            width: 100vw; height: 100vh; max-width: 430px;
+            background: var(--bg-dark) url('b18.jpg') no-repeat center center; background-size: cover;
+            position: relative; display: flex; flex-direction: column;
+        }
+
+        /* Top Bar */
+        #top-bar { padding: 8px 12px; background: rgba(0,0,0,0.9); border-bottom: 2px solid var(--electric); z-index: 10; }
+        .info-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; }
+        #timer-bar { width: 100%; height: 4px; background: #222; margin-top: 5px; border-radius: 2px; overflow: hidden; }
+        #timer-fill { width: 100%; height: 100%; background: var(--electric); transition: width 0.1s linear; }
+
+        /* Grid - 32 thẻ (4 cột x 8 hàng) */
+        #grid { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; 
+            padding: 10px; justify-items: center; flex-grow: 1; align-content: center;
+        }
+
+        .card {
+            width: var(--card-w); height: var(--card-h); background: #fff; border-radius: 6px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.2s; border: 2px solid #444; position: relative;
+        }
+        .card.selected { border-color: var(--electric); transform: scale(1.1); z-index: 2; box-shadow: 0 0 10px var(--electric); }
+        .card.matched { opacity: 0; pointer-events: none; }
+        .card img { width: 85%; height: 55%; object-fit: contain; }
+        .card b { font-size: 18px; color: #d32f2f; }
+        .card span { font-size: 7px; color: #333; font-weight: bold; text-align: center; line-height: 1; margin-top: 2px; }
+
+        #lightning-canvas { position: absolute; inset: 0; pointer-events: none; z-index: 100; }
+
+        /* Modals */
+        .modal { 
+            display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.98); 
+            flex-direction: column; align-items: center; justify-content: center; 
+            z-index: 2000; padding: 15px; text-align: center;
+        }
+        .modal.active { display: flex; }
+
+        /* Ôn tập - 16 ảnh xếp gọn trên 1 màn hình */
+        .review-grid { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; 
+            width: 100%; margin: 10px 0;
+        }
+        .rev-item { background: #fff; padding: 2px; border-radius: 4px; border: 1px solid var(--electric); }
+        .rev-item img { width: 100%; display: block; border-radius: 2px; }
+
+        /* Thắng cuộc */
+        #badge-img { width: 220px; filter: drop-shadow(0 0 20px var(--gold)); margin-bottom: 10px; }
+        .rank-bar { width: 100%; height: 12px; background: #333; border-radius: 10px; margin: 10px 0; border: 1px solid var(--gold); overflow: hidden; }
+        .rank-fill { width: 95%; height: 100%; background: linear-gradient(90deg, #ffd700, #fff); transition: width 2s; }
+        
+        .action-btn { 
+            padding: 14px 40px; font-size: 18px; background: var(--electric); 
+            color: #000; border: none; border-radius: 30px; cursor: pointer; font-weight: bold;
+        }
+
+        .shake { animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+    </style>
+</head>
+<body>
+
+<div id="mobile-container">
+    <canvas id="lightning-canvas"></canvas>
+
+    <div id="top-bar">
+        <div class="info-row">
+            <span id="lives-ui">❤️ ❤️ ❤️ ❤️ ❤️</span>
+            <span style="color: var(--electric)">LV18: THĂNG CẤP</span>
+            <span>Khớp: <span id="score-ui">0</span>/16</span>
+        </div>
+        <div id="timer-bar"><div id="timer-fill"></div></div>
+    </div>
+
+    <div id="grid"></div>
+
+    <!-- MÀN HÌNH ÔN TẬP - KHÔNG THANH CUỘN -->
+    <div id="review-modal" class="modal active">
+        <h2 style="color: var(--electric); margin-top: 0;">CAO THỦ TRÍ NHỚ</h2>
+        <div class="review-grid" id="review-list"></div>
+        <p style="font-size: 14px; margin: 10px 0;">Ghi nhớ 16 cặp thẻ trong 1 màn hình!</p>
+        <button class="action-btn" onclick="startGame()">BẮT ĐẦU NGAY</button>
+    </div>
+
+    <!-- MÀN HÌNH THẮNG -->
+    <div id="win-modal" class="modal">
+        <img src="7caothudanloi.png" id="badge-img" alt="Cao Thủ">
+        <h1 style="color: var(--gold); margin: 0;">BÁI PHỤC CAO THỦ!</h1>
+        <p style="margin: 5px 0;">Bạn đã chính thức thăng cấp bậc Cao Thủ.</p>
+        <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; width: 100%; box-sizing: border-box;">
+            <div style="color: var(--gold); font-size: 22px; font-weight: bold;">+400 ĐIỂM</div>
+            <div id="finish-time" style="color: var(--electric); font-size: 14px;">Thời gian: 0s</div>
+            <div class="rank-bar"><div class="rank-fill" id="progress-fill"></div></div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #aaa;">
+                <span>LV17: 7600</span>
+                <span style="color: var(--gold);">TỔNG: 8000/8000</span>
+            </div>
+        </div>
+        <button class="action-btn" style="margin-top: 15px;" onclick="window.location.href='lv19.html'">LEVEL 19 ➔</button>
+    </div>
+
+    <!-- MÀN HÌNH THUA -->
+    <div id="lose-modal" class="modal">
+        <h1 style="color: #ff5252;">THẤT BẠI!</h1>
+        <p>16 cặp thẻ là một thử thách lớn. Thử lại nhé!</p>
+        <button class="action-btn" onclick="location.reload()">SẠC LẠI BỘ NHỚ</button>
+    </div>
+</div>
+
+<script>
+    const bgMusic = new Audio('nhac-nen.mp3'); bgMusic.loop = true;
+    const zapSound = new Audio('bum.mp3');
+    const wrongSound = new Audio('sai.mp3');
+
+    // Số đã sắp xếp nhỏ -> lớn
+    const gameNumbers = [32, 34, 35, 38, 39, 43, 44, 46, 48, 49, 50, 58, 62, 64, 65, 69];
+    const dataDetails = {
+        32: "Vòi sen", 34: "Dưa hấu", 35: "Đu đủ", 38: "Nhẫn", 39: "Tê giác",
+        43: "Lướt sóng", 44: "Rừng thông", 46: "Cung tên", 48: "Doraemon",
+        49: "Ly tách", 50: "Xe đạp", 58: "Chú hề", 62: "Điện thoại",
+        64: "Người lính", 65: "Cú mèo", 69: "Bát quái"
+    };
+
+    let lives = 5, score = 0, timeLeft = 70, timer, selected = null, startTime;
+    const canvas = document.getElementById('lightning-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+        canvas.width = document.getElementById('mobile-container').clientWidth;
+        canvas.height = document.getElementById('mobile-container').clientHeight;
+    }
+    window.addEventListener('resize', resize); resize();
+
+    // TEST NHANH
+    window.addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === 't') handleWin();
+        if (e.key.toLowerCase() === 'l') handleLose();
+    });
+
+    // Render Ôn tập (4x4 = 16 ảnh) - Dùng a[số].png
+    const rList = document.getElementById('review-list');
+    gameNumbers.forEach(num => {
+        rList.innerHTML += `<div class="rev-item"><img src="a${num}.png"></div>`;
+    });
+
+    function startGame() {
+        document.getElementById('review-modal').classList.remove('active');
+        startTime = Date.now();
+        bgMusic.play().catch(() => {});
+        renderCards();
+        startTimer();
+    }
+
+    function renderCards() {
+        const grid = document.getElementById('grid');
+        let cards = [];
+        gameNumbers.forEach(num => {
+            cards.push({ id: num, html: `<b>${num}</b>` });
+            cards.push({ id: num, html: `<img src="${num}.png"><span>${dataDetails[num]}</span>` });
+        });
+        cards.sort(() => Math.random() - 0.5);
+
+        grid.innerHTML = '';
+        cards.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.innerHTML = c.html;
+            div.onclick = () => handleChoice(c.id, div);
+            grid.appendChild(div);
+        });
+    }
+
+    function handleChoice(id, el) {
+        if (el.classList.contains('matched') || el === selected?.el) return;
+
+        if (!selected) {
+            selected = { id, el };
+            el.classList.add('selected');
+        } else {
+            if (selected.id === id) {
+                drawLightning(selected.el, el);
+                const p1 = selected.el; const p2 = el;
+                p2.classList.add('selected');
+                score++;
+                document.getElementById('score-ui').innerText = score;
+                zapSound.currentTime = 0; zapSound.play();
+                
+                setTimeout(() => {
+                    p1.classList.add('matched'); p2.classList.add('matched');
+                    selected = null;
+                    if (score === 16) handleWin();
+                }, 300);
+            } else {
+                takeDamage(el);
+            }
+        }
+    }
+
+    function drawLightning(el1, el2) {
+        const r1 = el1.getBoundingClientRect();
+        const r2 = el2.getBoundingClientRect();
+        const container = document.getElementById('mobile-container').getBoundingClientRect();
+        let x1 = r1.left + r1.width/2 - container.left;
+        let y1 = r1.top + r1.height/2 - container.top;
+        let x2 = r2.left + r2.width/2 - container.left;
+        let y2 = r2.top + r2.height/2 - container.top;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        for(let i=0; i<10; i++) {
+            ctx.lineTo(x1+(x2-x1)*i/10 + (Math.random()-0.5)*20, y1+(y2-y1)*i/10 + (Math.random()-0.5)*20);
+        }
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = "white"; ctx.lineWidth = 3; 
+        ctx.shadowBlur = 10; ctx.shadowColor = "#00FBFF";
+        ctx.stroke();
+        setTimeout(() => ctx.clearRect(0, 0, canvas.width, canvas.height), 150);
+    }
+
+    function startTimer() {
+        timer = setInterval(() => {
+            timeLeft -= 0.1;
+            document.getElementById('timer-fill').style.width = (timeLeft/70)*100 + "%";
+            if (timeLeft <= 0) { clearInterval(timer); handleLose(); }
+        }, 100);
+    }
+
+    function takeDamage(el) {
+        wrongSound.play();
+        lives--;
+        document.getElementById('lives-ui').innerText = "❤️ ".repeat(lives) || "💀";
+        el.classList.add('shake');
+        if(selected) selected.el.classList.remove('selected');
+        selected = null;
+        setTimeout(() => el.classList.remove('shake'), 300);
+        if (lives <= 0) handleLose();
+    }
+
+    function handleWin() {
+        clearInterval(timer);
+        const time = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('finish-time').innerText = `Thời gian hoàn thành: ${time} giây`;
+        document.getElementById('win-modal').classList.add('active');
+        setTimeout(() => { document.getElementById('progress-fill').style.width = "100%"; }, 500);
+    }
+
+    function handleLose() {
+        clearInterval(timer);
+        document.getElementById('lose-modal').classList.add('active');
+    }
+</script>
+</body>
+</html>

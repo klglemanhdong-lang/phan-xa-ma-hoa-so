@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Level 24: Thử Thách Kim Cương Tuyệt Đối</title>
+    <style>
+        :root {
+            --electric: #00FBFF;
+            --gold: #FFD700;
+            --bg-dark: #050505;
+            --red: #FF4444;
+            --green: #00FF88;
+            --diamond: #b9f2ff;
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; background: #000; color: white; 
+            margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        }
+
+        #mobile-container {
+            width: 100vw; height: 100vh; max-width: 430px;
+            background-color: var(--bg-dark);
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: cover;
+            position: relative; display: flex; flex-direction: column;
+        }
+
+        /* Top Bar */
+        #top-bar { padding: 15px; background: rgba(0,0,0,0.85); border-bottom: 2px solid var(--electric); z-index: 10; }
+        .info-row { display: flex; justify-content: space-between; font-weight: bold; align-items: center; }
+        #live-score { color: var(--gold); font-size: 22px; text-shadow: 0 0 10px var(--gold); }
+        
+        #timer-bar { width: 100%; height: 8px; background: #222; margin-top: 10px; border-radius: 4px; overflow: hidden; }
+        #timer-fill { width: 100%; height: 100%; background: var(--electric); transition: width 0.1s linear; }
+        .time-warning { background: var(--red) !important; animation: blink 0.5s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        /* Hearts Display */
+        #hearts-display { color: var(--red); font-size: 18px; margin-top: 5px; letter-spacing: 2px; }
+
+        /* Quiz Area */
+        #quiz-container { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: relative; }
+        #question-area { position: relative; margin-bottom: 30px; }
+        #question-box {
+            font-size: 80px; font-weight: 900; color: var(--electric);
+            text-shadow: 0 0 20px var(--electric);
+            background: rgba(255,255,255,0.1); width: 160px; height: 160px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 20px; border: 3px solid var(--electric);
+            transition: all 0.2s;
+        }
+
+        /* Options */
+        #options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
+        .option-card {
+            background: white; border-radius: 15px; padding: 10px;
+            border: 4px solid transparent; transition: 0.2s; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; aspect-ratio: 1/1;
+        }
+        .option-card img { width: 85%; height: 85%; object-fit: contain; }
+        .option-card.correct-tap { border-color: var(--green); background: #e0fff0; box-shadow: 0 0 20px var(--green); }
+        .option-card.wrong-tap { border-color: var(--red); background: #fff0f0; box-shadow: 0 0 20px var(--red); }
+
+        /* Modals */
+        .modal { 
+            display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.98); 
+            flex-direction: column; align-items: center; justify-content: center; 
+            z-index: 2000; padding: 20px; text-align: center;
+        }
+        .modal.active { display: flex; }
+
+        @keyframes pulseZoom { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .zoom-effect { animation: pulseZoom 2s infinite ease-in-out; }
+        .badge-img { width: 200px; filter: drop-shadow(0 0 25px var(--diamond)); }
+
+        .action-btn { padding: 16px 45px; font-size: 20px; background: var(--electric); color: #000; border: none; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 20px; }
+
+        /* Score Animation */
+        .score-float {
+            position: absolute; font-weight: bold; font-size: 38px;
+            pointer-events: none; animation: floatUp 0.8s ease-out forwards; 
+            z-index: 100; left: 50%; transform: translateX(-50%);
+            top: -50px;
+        }
+        @keyframes floatUp { 0% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -80px); opacity: 0; } }
+
+        .review-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: 100%; margin: 15px 0; max-height: 45vh; overflow-y: auto; }
+        .rev-item { background: #fff; padding: 2px; border-radius: 4px; border: 1px solid var(--electric); }
+        .rev-item img { width: 100%; display: block; }
+
+        .shake { animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+    </style>
+</head>
+<body>
+
+<div id="mobile-container">
+    <div id="top-bar">
+        <div class="info-row">
+            <span style="color: var(--electric)">LV 24: SÁNG TẠO</span>
+            <div id="live-score">0</div>
+            <span>Câu: <span id="current-q">1</span>/<span id="total-q-display">27</span></span>
+        </div>
+        <div id="hearts-display">❤️❤️❤️</div>
+        <div id="timer-bar"><div id="timer-fill"></div></div>
+    </div>
+
+    <div id="quiz-container">
+        <div id="question-area">
+            <div id="question-box">--</div>
+        </div>
+        <div id="options-grid"></div>
+    </div>
+
+    <div id="review-modal" class="modal active">
+        <h2 style="color: var(--electric)">ÔN TẬP 70 - 89</h2>
+        <div class="review-grid" id="review-list"></div>
+        <button class="action-btn" onclick="startGame()">BẮT ĐẦU</button>
+    </div>
+
+    <div id="win-modal" class="modal">
+        <div class="zoom-effect">
+            <img src="10kimcuongsangtao.png" class="badge-img">
+            <div style="color: var(--diamond); font-size: 26px; font-weight: bold; margin-top: 10px;">KIM CƯƠNG SÁNG TẠO</div>
+        </div>
+        <h1 style="color: #fff; margin: 10px 0;">TUYỆT VỜI!</h1>
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; width: 100%; box-sizing: border-box;">
+            <div style="color: var(--diamond); font-size: 32px; font-weight: bold; margin-bottom: 5px;">+<span id="bonus-points">0</span> ĐIỂM</div>
+            <div style="color: var(--gold); font-size: 18px;">Bạn đã thăng cấp thành công!</div>
+        </div>
+        <button class="action-btn" onclick="window.location.href='lv25.html'">TIẾP TỤC ➔</button>
+    </div>
+
+    <div id="lose-modal" class="modal">
+        <img src="10kincuongsangtao.png" style="width: 120px; filter: grayscale(1); opacity: 0.5;">
+        <h2 style="color: var(--red); margin-top: 20px;">HẾT LƯỢT RỒI!</h2>
+        <p style="color: #ccc; padding: 0 20px;">Đừng bỏ cuộc, chỉ một chút tập trung nữa thôi là bạn sẽ nhận được Kim Cương!</p>
+        <div id="lose-stats" style="color: var(--gold); font-size: 20px; margin-top: 10px;">Đúng: 0/27</div>
+        <button class="action-btn" onclick="location.reload()">THỬ LẠI ➔</button>
+    </div>
+</div>
+
+<script>
+    const backgrounds = ['b1.jpg', 'b2.jpg', 'b3.jpg', 'b4.jpg', 'b5.jpg', 'b6.jpg'];
+    const randomBG = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+    document.getElementById('mobile-container').style.backgroundImage = `url('${randomBG}')`;
+
+    const bgMusic = new Audio('nhac-nen-2.mp3'); bgMusic.loop = true; bgMusic.volume = 0.1;
+    const dungSound = new Audio('dung.mp3');
+    const saiSound = new Audio('sai.mp3');
+    const winSound = new Audio('chien-thang.mp3');
+    const time5sSound = new Audio('time5s.mp3');
+
+    const baseData = ["70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89"];
+    const doubleItems = ["71", "75", "79", "81", "84", "86", "89"];
+    let quizData = [], currentIdx = 0, correctCount = 0, totalScore = 0, timeLeft = 10, timerInterval, is5sPlayed = false;
+    let lives = 3; // Khởi tạo số mạng
+
+    const rList = document.getElementById('review-list');
+    baseData.forEach(num => { rList.innerHTML += `<div class="rev-item"><img src="${num}.png"></div>`; });
+
+    function updateHeartsUI() {
+        const hearts = '❤️'.repeat(lives) + '🖤'.repeat(3 - lives);
+        document.getElementById('hearts-display').innerText = hearts;
+    }
+
+    function startGame() {
+        document.getElementById('review-modal').classList.remove('active');
+        bgMusic.play().catch(() => {});
+        quizData = [...baseData, ...doubleItems].sort(() => Math.random() - 0.5);
+        document.getElementById('total-q-display').innerText = quizData.length;
+        lives = 3;
+        updateHeartsUI();
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizData.length) { 
+            checkFinalResult(); 
+            return; 
+        }
+
+        timeLeft = 10; is5sPlayed = false;
+        const tFill = document.getElementById('timer-fill');
+        tFill.style.width = "100%"; tFill.classList.remove('time-warning');
+        document.getElementById('current-q').innerText = currentIdx + 1;
+
+        const correctNum = quizData[currentIdx];
+        document.getElementById('question-box').innerText = correctNum;
+
+        let options = [correctNum];
+        while (options.length < 4) {
+            let rand = baseData[Math.floor(Math.random() * baseData.length)];
+            if (!options.includes(rand)) options.push(rand);
+        }
+        options.sort(() => Math.random() - 0.5);
+
+        const grid = document.getElementById('options-grid');
+        grid.innerHTML = '';
+        options.forEach(opt => {
+            const card = document.createElement('div');
+            card.className = 'option-card';
+            card.innerHTML = `<img src="${opt}.png">`;
+            card.onclick = () => processAnswer(opt, correctNum, card);
+            grid.appendChild(card);
+        });
+        startTimer();
+    }
+
+    function processAnswer(selected, correct, card) {
+        clearInterval(timerInterval);
+        document.getElementById('options-grid').style.pointerEvents = 'none';
+
+        if (selected === correct) {
+            correctCount++;
+            totalScore += 5;
+            if(card) card.classList.add('correct-tap');
+            showFloatingText("+5", "var(--green)");
+            dungSound.currentTime = 0; dungSound.play();
+        } else {
+            lives--; // Trừ mạng khi sai hoặc hết giờ
+            updateHeartsUI();
+            if(card) card.classList.add('wrong-tap');
+            showFloatingText("Sai rồi!", "var(--red)");
+            saiSound.currentTime = 0; saiSound.play();
+            
+            // Hiệu ứng rung khi sai
+            document.getElementById('mobile-container').classList.add('shake');
+            setTimeout(() => document.getElementById('mobile-container').classList.remove('shake'), 300);
+        }
+
+        document.getElementById('live-score').innerText = totalScore;
+        currentIdx++;
+
+        setTimeout(() => {
+            if (lives <= 0) {
+                checkFinalResult(); // Thua ngay lập tức
+            } else {
+                document.getElementById('options-grid').style.pointerEvents = 'auto';
+                loadQuestion();
+            }
+        }, 600);
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            timeLeft -= 0.1;
+            document.getElementById('timer-fill').style.width = (timeLeft / 10) * 100 + "%";
+            if (timeLeft <= 5) {
+                document.getElementById('timer-fill').classList.add('time-warning');
+                if (!is5sPlayed) { time5sSound.play(); is5sPlayed = true; }
+            }
+            if (timeLeft <= 0) processAnswer(null, "TIME_UP", null);
+        }, 100);
+    }
+
+    function checkFinalResult() {
+        clearInterval(timerInterval);
+        bgMusic.pause();
+
+        if (lives > 0 && correctCount === quizData.length) {
+            winSound.play();
+            document.getElementById('win-modal').classList.add('active');
+            animateNumber(0, 2000, 3000, 'bonus-points');
+        } else {
+            document.getElementById('lose-stats').innerText = `Kết quả: ${correctCount}/${quizData.length}`;
+            document.getElementById('lose-modal').classList.add('active');
+        }
+    }
+
+    function animateNumber(start, end, duration, elementId) {
+        const obj = document.getElementById(elementId);
+        const range = end - start;
+        const startTime = new Date().getTime();
+        const endTime = startTime + duration;
+        function update() {
+            const now = new Date().getTime();
+            const remaining = Math.max((endTime - now) / duration, 0);
+            const value = Math.round(end - (remaining * range));
+            obj.innerHTML = value.toLocaleString();
+            if (value < end) requestAnimationFrame(update);
+        }
+        update();
+    }
+
+    function showFloatingText(text, color) {
+        const float = document.createElement('div');
+        float.className = 'score-float';
+        float.innerText = text; float.style.color = color;
+        document.getElementById('question-area').appendChild(float);
+        setTimeout(() => float.remove(), 800);
+    }
+
+    window.addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 't') { correctCount = 27; checkFinalResult(); } });
+</script>
+</body>
+</html>

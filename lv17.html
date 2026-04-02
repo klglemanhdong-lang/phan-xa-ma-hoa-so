@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Level 17: Đấu Trường Trí Nhớ - 11 Cặp Thẻ</title>
+    <style>
+        :root {
+            --electric: #00FBFF;
+            --gold: #FFD700;
+            --bg-dark: #0a0a0a;
+            --card-w: 65px; /* Nhỏ hơn để vừa 22 thẻ */
+            --card-h: 90px;
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; background: #000; color: white; 
+            margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        }
+
+        #mobile-container {
+            width: 100vw; height: 100vh; max-width: 430px;
+            background: var(--bg-dark) url('b17.jpg') no-repeat center center; background-size: cover;
+            position: relative; display: flex; flex-direction: column; border: 1px solid #333;
+        }
+
+        /* Top Bar */
+        #top-bar { padding: 10px; background: rgba(0,0,0,0.8); border-bottom: 2px solid var(--electric); z-index: 10; }
+        .info-row { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; }
+        #timer-bar { width: 100%; height: 6px; background: #222; margin-top: 8px; border-radius: 3px; overflow: hidden; }
+        #timer-fill { width: 100%; height: 100%; background: var(--electric); transition: width 0.1s linear; }
+
+        /* Grid - 22 thẻ (4 cột x 6 hàng hoặc linh hoạt) */
+        #grid { 
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; 
+            padding: 15px; justify-items: center; overflow-y: auto; flex-grow: 1;
+            align-content: start;
+        }
+
+        .card {
+            width: var(--card-w); height: var(--card-h); background: #fff; border-radius: 8px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.3s; border: 3px solid #444; position: relative;
+        }
+        .card.selected { border-color: var(--electric); transform: scale(1.05); box-shadow: 0 0 15px var(--electric); }
+        .card.matched { opacity: 0; pointer-events: none; transform: scale(0.5); }
+        .card img { width: 80%; height: 60%; object-fit: contain; }
+        .card b { font-size: 24px; color: #d32f2f; }
+        .card span { font-size: 8px; color: #333; font-weight: bold; text-align: center; }
+
+        /* Hiệu ứng Tia sét */
+        #lightning-canvas { position: absolute; inset: 0; pointer-events: none; z-index: 100; }
+
+        /* Modals */
+        .modal { 
+            display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.95); 
+            flex-direction: column; align-items: center; justify-content: center; 
+            z-index: 2000; padding: 20px; text-align: center;
+        }
+        .modal.active { display: flex; }
+
+        /* Ôn tập - Sử dụng a[số].png */
+        .review-scroll { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; 
+            width: 100%; max-height: 60vh; overflow-y: auto; margin: 15px 0;
+        }
+        .rev-item { background: #fff; padding: 5px; border-radius: 8px; border: 2px solid var(--electric); }
+        .rev-item img { width: 100%; border-radius: 5px; }
+
+        /* Thắng cuộc */
+        .rank-bar { width: 100%; height: 15px; background: #333; border-radius: 10px; margin: 15px 0; border: 1px solid var(--gold); overflow: hidden; }
+        .rank-fill { width: 94.7%; height: 100%; background: linear-gradient(90deg, #ffd700, #fff); transition: width 2s; }
+        
+        .action-btn { 
+            padding: 15px 35px; font-size: 18px; background: var(--electric); 
+            color: #000; border: none; border-radius: 30px; cursor: pointer; font-weight: bold;
+            box-shadow: 0 0 15px var(--electric);
+        }
+
+        .shake { animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+    </style>
+</head>
+<body>
+
+<div id="mobile-container">
+    <canvas id="lightning-canvas"></canvas>
+
+    <div id="top-bar">
+        <div class="info-row">
+            <span id="lives-ui">❤️ ❤️ ❤️ ❤️ ❤️</span>
+            <span style="color: var(--electric)">LEVEL 17</span>
+            <span>Khớp: <span id="score-ui">0</span>/11</span>
+        </div>
+        <div id="timer-bar"><div id="timer-fill"></div></div>
+    </div>
+
+    <div id="grid"></div>
+
+    <!-- MÀN HÌNH ÔN TẬP -->
+    <div id="review-modal" class="modal active">
+        <h2 style="color: var(--electric)">GHI NHỚ 11 CẶP THẺ</h2>
+        <div class="review-scroll" id="review-list"></div>
+        <button class="action-btn" onclick="startGame()">BẮT ĐẦU PHÓNG SÉT</button>
+    </div>
+
+    <!-- MÀN HÌNH THẮNG -->
+    <div id="win-modal" class="modal">
+        <img src="3vang.png" style="width: 150px; filter: drop-shadow(0 0 15px var(--gold));">
+        <h1 style="color: var(--gold)">SIÊU PHÀM!</h1>
+        <p>Bộ nhớ của bạn đã đạt đến đẳng cấp mới.</p>
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; width: 100%; box-sizing: border-box;">
+            <div style="color: var(--gold); font-size: 24px; font-weight: bold;">+400 ĐIỂM</div>
+            <div id="finish-time" style="color: var(--electric); margin: 5px 0;">Thời gian: 0s</div>
+            <div class="rank-bar"><div class="rank-fill" id="progress-fill"></div></div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #aaa;">
+                <span>LV16: 7200</span>
+                <span style="color: var(--gold);">TỔNG: 7600/7600</span>
+            </div>
+        </div>
+        <button class="action-btn" style="margin-top: 20px;" onclick="window.location.href='lv18.html'">TIẾP TỤC LV 18 ➔</button>
+    </div>
+
+    <!-- MÀN HÌNH THUA -->
+    <div id="lose-modal" class="modal">
+        <h1 style="color: #ff5252;">HỆ THỐNG QUÁ TẢI</h1>
+        <p>Đừng nản lòng, trí tuệ cần sự rèn luyện!</p>
+        <button class="action-btn" onclick="location.reload()">THỬ LẠI</button>
+    </div>
+</div>
+
+<script>
+    const bgMusic = new Audio('nhac-nen.mp3'); bgMusic.loop = true;
+    const zapSound = new Audio('bum.mp3');
+    const wrongSound = new Audio('sai.mp3');
+
+    const gameNumbers = [62, 64, 65, 69, 50, 58, 32, 34, 35, 38, 39];
+    const dataDetails = {
+        62: "Điện thoại", 64: "Người lính", 65: "Cú mèo", 69: "Bát quái",
+        50: "Xe đạp", 58: "Chú hề", 32: "Vòi sen", 34: "Dưa hấu",
+        35: "Đu đủ", 38: "Nhẫn kim cương", 39: "Tê giác"
+    };
+
+    let lives = 5, score = 0, timeLeft = 45, timer, selected = null, startTime;
+    const canvas = document.getElementById('lightning-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+        canvas.width = document.getElementById('mobile-container').clientWidth;
+        canvas.height = document.getElementById('mobile-container').clientHeight;
+    }
+    window.addEventListener('resize', resize); resize();
+
+    // TEST NHANH
+    window.addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === 't') handleWin();
+        if (e.key.toLowerCase() === 'l') handleLose();
+    });
+
+    // Render Ôn tập (a[số].png)
+    const rList = document.getElementById('review-list');
+    gameNumbers.forEach(num => {
+        rList.innerHTML += `<div class="rev-item"><img src="a${num}.png"></div>`;
+    });
+
+    function startGame() {
+        document.getElementById('review-modal').classList.remove('active');
+        startTime = Date.now();
+        bgMusic.play().catch(() => {});
+        renderCards();
+        startTimer();
+    }
+
+    function renderCards() {
+        const grid = document.getElementById('grid');
+        let cards = [];
+        gameNumbers.forEach(num => {
+            // Thẻ số
+            cards.push({ id: num, html: `<b>${num}</b>` });
+            // Thẻ hình ([số].png)
+            cards.push({ id: num, html: `<img src="${num}.png"><span>${dataDetails[num]}</span>` });
+        });
+        cards.sort(() => Math.random() - 0.5);
+
+        grid.innerHTML = '';
+        cards.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.innerHTML = c.html;
+            div.onclick = () => handleChoice(c.id, div);
+            grid.appendChild(div);
+        });
+    }
+
+    function handleChoice(id, el) {
+        if (el.classList.contains('matched') || el === selected?.el) return;
+
+        if (!selected) {
+            selected = { id, el };
+            el.classList.add('selected');
+        } else {
+            if (selected.id === id) {
+                drawLightning(selected.el, el);
+                const p1 = selected.el; const p2 = el;
+                p2.classList.add('selected');
+                score++;
+                document.getElementById('score-ui').innerText = score;
+                zapSound.currentTime = 0; zapSound.play();
+                
+                setTimeout(() => {
+                    p1.classList.add('matched'); p2.classList.add('matched');
+                    selected = null;
+                    if (score === 11) handleWin();
+                }, 300);
+            } else {
+                takeDamage(el);
+            }
+        }
+    }
+
+    function drawLightning(el1, el2) {
+        const r1 = el1.getBoundingClientRect();
+        const r2 = el2.getBoundingClientRect();
+        const container = document.getElementById('mobile-container').getBoundingClientRect();
+        
+        let x1 = r1.left + r1.width/2 - container.left;
+        let y1 = r1.top + r1.height/2 - container.top;
+        let x2 = r2.left + r2.width/2 - container.left;
+        let y2 = r2.top + r2.height/2 - container.top;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        for(let i=0; i<10; i++) {
+            ctx.lineTo(x1+(x2-x1)*i/10 + (Math.random()-0.5)*15, y1+(y2-y1)*i/10 + (Math.random()-0.5)*15);
+        }
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = "white"; ctx.lineWidth = 3; 
+        ctx.shadowBlur = 10; ctx.shadowColor = "#00FBFF";
+        ctx.stroke();
+        setTimeout(() => ctx.clearRect(0, 0, canvas.width, canvas.height), 150);
+    }
+
+    function startTimer() {
+        timer = setInterval(() => {
+            timeLeft -= 0.1;
+            document.getElementById('timer-fill').style.width = (timeLeft/45)*100 + "%";
+            if (timeLeft <= 0) { clearInterval(timer); handleLose(); }
+        }, 100);
+    }
+
+    function takeDamage(el) {
+        wrongSound.play();
+        lives--;
+        document.getElementById('lives-ui').innerText = "❤️ ".repeat(lives) || "💀";
+        el.classList.add('shake');
+        if(selected) selected.el.classList.remove('selected');
+        selected = null;
+        setTimeout(() => el.classList.remove('shake'), 300);
+        if (lives <= 0) handleLose();
+    }
+
+    function handleWin() {
+        clearInterval(timer);
+        isWon = true;
+        const time = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('finish-time').innerText = `Thời gian hoàn thành: ${time} giây`;
+        document.getElementById('win-modal').classList.add('active');
+        setTimeout(() => { document.getElementById('progress-fill').style.width = "100%"; }, 500);
+    }
+
+    function handleLose() {
+        clearInterval(timer);
+        document.getElementById('lose-modal').classList.add('active');
+    }
+</script>
+</body>
+</html>
